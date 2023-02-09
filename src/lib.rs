@@ -105,32 +105,43 @@ pub fn parse_game(game: Game, query: Query) -> Result<QueryResult, Box<dyn Error
     Ok(result)
 }
 
-pub fn parse_frames(frames: Vec<Frame<2>>, interactions: Vec<Interaction>) -> Result<QueryResult, Box<dyn Error>> {
+pub fn parse_frames(
+    frames: Vec<Frame<2>>,
+    interactions: Vec<Interaction>,
+) -> Result<QueryResult, Box<dyn Error>> {
     let mut frame_indices = Vec::new();
-    let mut target_interaction = &interactions[0];
 
     let mut contiguous = &false;
     let mut first_frame = 0;
+    let mut interaction_iter = interactions.iter();
+    let mut target_interaction = match interaction_iter.next() {
+        Some(interaction) => interaction,
+        None => panic!("There were no interactions listed when parsing frames"),
+    };
 
     let iter = frames.iter();
     // We need to:
     // Step through each interaction piece by piece, when we reach the end then we push, the first
     // frame of the occurence into the vec of frame_indices
-    // During each step of the interaction we need to check that it is: 
+    // During each step of the interaction we need to check that it is:
     // The first frame of the correct state
     // Done by the correct character
     // Within the amount of frames specified from the previous move.
-    //TODO Using windows here would be much better
+
+    // TODO Change contiguous, add within, investigate why we aren't getting output from test
     for (index, frame) in iter.enumerate() {
-        //TODO This line is very ugly
-        if frame.ports[1].leader.post.state == target_interaction.action {
+        for port in &frame.ports {
+            let post_frame = port.leader.post;
+            if post_frame.character != target_interaction.from_player {
+                break;
+            }
+            if post_frame.state != target_interaction.action {
+            contiguous = &false;
+            }
             if !contiguous {
                 frame_indices.push(index);
                 contiguous = &true;
             }
-        } else {
-            //TODO Definitely change this
-            contiguous = &false;
         }
     }
     Ok(QueryResult { frame_indices })
