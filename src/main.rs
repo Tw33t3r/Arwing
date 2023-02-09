@@ -1,20 +1,9 @@
 use std::{env, process, error::Error, fs::File, path::Path};
 
-use peppi::model::{
-    enums::{
-        action_state::{self, State},
-        character::External,
-    },
-    primitives::Port,
-};
-
-use arwing::{read_game, parse_game, Query, QueryResult, Interaction};
-
-
+use arwing::{read_game, parse_game, Query};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    println!("{:?}", args);
 
     let query = Query::build(&args).unwrap_or_else(|err| {
         println!("Couldn't parse arguments: {err}");
