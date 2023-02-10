@@ -3,7 +3,10 @@ use std::{error::Error, fs::File, path::Path};
 use peekread::BufPeekReader;
 
 use peppi::model::{
-    enums::{action_state::State, character::Internal},
+    enums::{
+        action_state::{Common, State},
+        character::Internal,
+    },
     frame::{Frame, PortData},
     game::{Frames, Game},
 };
@@ -97,8 +100,8 @@ enum InteractionResult {
     Target,
 }
 
-pub fn check_players(game: Game, query: Query) -> Option<Characters> {
-    match game.metadata.players {
+pub fn check_players(game: &Game, query: &Query) -> Option<Characters> {
+    match &game.metadata.players {
         Some(players) => {
             if players.len() != 2 {
                 return None;
@@ -108,6 +111,7 @@ pub fn check_players(game: Game, query: Query) -> Option<Characters> {
             let char1_map = &players[0].characters.as_ref()?;
             let char2_map = &players[1].characters.as_ref()?;
             // This is ugly, but it saves us from iterating over keys
+            // Might break on zelda
             if char1_map.contains_key(&query.character) {
                 p1 = query.character;
                 if char2_map.contains_key(&query.opponent) {
@@ -140,7 +144,11 @@ pub fn read_game(infile: &Path) -> Result<Game, Box<dyn Error>> {
     Ok(game)
 }
 
-pub fn parse_game(game: Game, query: Query, players: Characters) -> Result<QueryResult, Box<dyn Error>> {
+pub fn parse_game(
+    game: Game,
+    query: Query,
+    players: Characters,
+) -> Result<QueryResult, Box<dyn Error>> {
     let result: QueryResult;
     match game.frames {
         Frames::P2(frames) => {
@@ -154,13 +162,15 @@ pub fn parse_game(game: Game, query: Query, players: Characters) -> Result<Query
 pub fn parse_frames(
     frames: Vec<Frame<2>>,
     interactions: Vec<Interaction>,
-    players: Characters
+    players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
-//!TODO continue to replace character with players from this point on
     let mut target_indices: Vec<usize> = Vec::new();
     let mut result = Vec::new();
 
-    let mut contiguous = &false;
+    let mut previous_frame = [
+        State::Common(Common::CAPTURE_CRAZY_HAND),
+        State::Common(Common::CAPTURE_CRAZY_HAND),
+    ];
 
     let mut interaction_iter = interactions.iter();
     let mut target_interaction = match interaction_iter.next() {
@@ -176,8 +186,13 @@ pub fn parse_frames(
         //With this the way it is we will end up checking a lot of unnecessary frames in non-mirror
         //matchups.
         //TODO way too many indentations
-        for port in &frame.ports {
-            match check_interaction(port, target_interaction, &mut remaining) {
+        for (port_index, port) in frame.ports.iter().enumerate() {
+            let port_character = match port_index {
+                0 => players.p1,
+                1 => players.p2,
+                _ => panic!("Attempting to parse a game with more than 2 players"),
+            };
+            match check_interaction(port, target_interaction, &mut remaining, port_character) {
                 InteractionResult::WrongCharacter => (),
                 InteractionResult::TimeOut => {
                     //reset
@@ -188,16 +203,18 @@ pub fn parse_frames(
                             "When resetting internal interactions no interactions were found"
                         ),
                     };
+                    target_indices = Vec::new();
+                    remaining = reset_interaction.within;
                     target_interaction = reset_interaction;
                 }
-                InteractionResult::NonContiguous => contiguous = &false,
+                InteractionResult::NonContiguous => (),
                 InteractionResult::Target => {
-                    if !contiguous {
+                    if previous_frame[port_index] != port.leader.post.state {
                         //TODO Excessively moving memory around in this block
+                        println!("target before {:?}", target_interaction);
                         target_interaction = match interaction_iter.next() {
                             Some(interaction) => {
                                 target_indices.push(index);
-                                contiguous = &true;
                                 remaining = interaction.within;
                                 interaction
                             }
@@ -212,14 +229,14 @@ pub fn parse_frames(
                                 target_indices.push(index);
                                 result.push(target_indices);
                                 target_indices = Vec::new();
-                                contiguous = &true;
                                 remaining = reset_interaction.within;
                                 reset_interaction
                             }
-                        }
+                        };
                     }
                 }
             };
+            previous_frame[port_index] = port.leader.post.state;
         }
     }
     Ok(QueryResult { result })
@@ -229,6 +246,7 @@ fn check_interaction(
     port: &PortData,
     target: &Interaction,
     remaining: &mut Option<u32>,
+    character: Internal,
 ) -> InteractionResult {
     if let Some(amount) = remaining {
         if amount == &0 {
@@ -238,18 +256,18 @@ fn check_interaction(
     }
 
     let post_frame = port.leader.post;
-    if post_frame.character != target.from_player {
+    if character != target.from_player {
         return InteractionResult::WrongCharacter;
     }
-    if post_frame.state != target.action {
-        return InteractionResult::NonContiguous;
-    } else {
+    if post_frame.state == target.action {
         return InteractionResult::Target;
     }
+    return InteractionResult::NonContiguous;
 }
 
-//TODO If it's possible, try using serde
-
+//TODO If it's possible, try avoiding reading all of the game into memory
+//TODO Export to clippi file
+//TODO Parse through multiple files
 #[cfg(test)]
 mod tests {
     use peppi::model::enums::action_state::{Common, Fox};
@@ -270,8 +288,8 @@ mod tests {
                 within: None,
             }],
         };
-        let parsed = parse_game(game, query).unwrap();
-        println!("{:#?}", parsed.result);
+        let players = check_players(&game, &query).unwrap();
+        let parsed = parse_game(game, query, players).unwrap();
         assert_eq!(
             parsed.result,
             vec![
@@ -307,8 +325,8 @@ mod tests {
                 within: None,
             }],
         };
-        let parsed = parse_game(game, query).unwrap();
-        println!("{:#?}", parsed.result);
+        let players = check_players(&game, &query).unwrap();
+        let parsed = parse_game(game, query, players).unwrap();
         assert_eq!(
             parsed.result,
             [
@@ -356,14 +374,14 @@ mod tests {
                     within: None,
                 },
                 Interaction {
-                    action: State::Common(Common::DAMAGE_FLY_TOP),
+                    action: State::Common(Common::DAMAGE_AIR_2),
                     from_player: Internal::PIKACHU,
-                    within: Some(60),
+                    within: Some(200),
                 },
             ],
         };
-        let parsed = parse_game(game, query).unwrap();
-        println!("{:#?}", parsed.result);
-        assert_eq!(parsed.result, [[1230]])
+        let players = check_players(&game, &query).unwrap();
+        let parsed = parse_game(game, query, players).unwrap();
+        assert_eq!(parsed.result, [[3645,3661], [6943, 6947], [12272, 12276]])
     }
 }

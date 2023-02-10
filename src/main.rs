@@ -13,7 +13,7 @@ fn main() {
     let now = std::time::Instant::now();
     let path = Path::new("test.slp");
     let game = read_game(path).unwrap();
-    let players = check_players(game, query).unwrap();
+    let players = check_players(&game, &query).unwrap();
     let parsed = parse_game(game, query, players).unwrap();
     println!("Parsed replay in {} μs", now.elapsed().as_micros());
     println!("{:#?}", parsed.result);
