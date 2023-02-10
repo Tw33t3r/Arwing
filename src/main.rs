@@ -1,6 +1,6 @@
-use std::{env, process, error::Error, fs::File, path::Path};
+use std::{env, error::Error, fs::File, path::Path, process};
 
-use arwing::{read_game, parse_game, Query};
+use arwing::{check_players, parse_game, read_game, Query};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -13,7 +13,8 @@ fn main() {
     let now = std::time::Instant::now();
     let path = Path::new("test.slp");
     let game = read_game(path).unwrap();
-    let parsed = parse_game(game, query).unwrap();
+    let players = check_players(game, query).unwrap();
+    let parsed = parse_game(game, query, players).unwrap();
     println!("Parsed replay in {} μs", now.elapsed().as_micros());
-    println!("{:#?}", parsed.frame_indices);
+    println!("{:#?}", parsed.result);
 }
