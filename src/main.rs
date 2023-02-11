@@ -1,6 +1,6 @@
-use std::{env, error::Error, fs::File, path::Path, process};
+use std::{env, path::Path, process};
 
-use arwing::{check_players, parse_game, read_game, Query};
+use arwing::{check_players, parse_game, read_game, Query };
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -15,6 +15,7 @@ fn main() {
     let game = read_game(path).unwrap();
     let players = check_players(&game, &query).unwrap();
     let parsed = parse_game(game, query, players).unwrap();
+    //create_json(parsed, path, query.export);
     println!("Parsed replay in {} μs", now.elapsed().as_micros());
     println!("{:#?}", parsed.result);
 }
