@@ -19,12 +19,10 @@ Arwing's goal is to be a querying engine for finding interactions in a set of sl
 ### TODO
 - Parsing can defo be faster
 - Setup to parse directories, return the frame indices and games where interactions occur
-- Option to open each interaction up on slippi like project clippi does. 
-- Define query system
+- Export project clippi files
+- Refine query system
     - Select stages
-    - Select characters
     - Parse only character or specifically for Player Name
-    - Option for move hitting, not first frame of move
 
 - Create GUI App
     - Likely Tauri
