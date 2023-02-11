@@ -20,6 +20,7 @@ pub struct Interaction {
 
 pub struct Query {
     pub player_name: Option<String>,
+    pub export: Option<String>,
     pub character: Internal,
     pub opponent: Internal,
     pub interactions: Vec<Interaction>,
@@ -31,31 +32,37 @@ impl Query {
         if args.len() < 3 {
             return Err("Not enough arguments");
         }
+        args = &args[1..];
 
         let mut name = None;
-        if args[1] == "--name" {
-            name = Some(&args[2]);
-            args = &args[3..];
+        if args[0] == "--name" {
+            name = Some(&args[1]);
+            args = &args[2..];
         }
 
-        let character_result = Internal::try_from(&args[1][..]);
+        let mut export = None;
+        if args[0] == "--export" {
+            export = Some(&args[1]);
+            args = &args[2..];
+        }
+
+        let character_result = Internal::try_from(&args[0][..]);
         let character = match character_result {
             Ok(Internal(character)) => character,
             Err(error) => panic!("Couldn't match the player's character {:?}", error),
         };
 
-        let opponent_result = Internal::try_from(&args[2][..]);
+        let opponent_result = Internal::try_from(&args[1][..]);
         let opponent = match opponent_result {
             Ok(Internal(opponent)) => opponent,
             Err(error) => panic!("Couldn't match the opponent's character {:?}", error),
         };
 
-        args = &args[3..];
-        println!("{:?}", args);
+        args = &args[2..];
         let interactions: Vec<Interaction> = args
             .chunks(3)
             .map(|interaction| {
-                let from_player_result = Internal::try_from(&args[1][..]);
+                let from_player_result = Internal::try_from(&interaction[1][..]);
                 let from_player = match from_player_result {
                     Ok(Internal(from_player)) => from_player,
                     Err(error) => {
@@ -74,9 +81,11 @@ impl Query {
                 }
             })
             .collect();
+        println!("Interactions are: {:?}", interactions);
         Ok(Query {
             //TODO I think cloned is slow here
             player_name: name.cloned(),
+            export: export.cloned(),
             character: Internal(character),
             opponent: Internal(opponent),
             interactions,
@@ -211,7 +220,6 @@ pub fn parse_frames(
                 InteractionResult::Target => {
                     if previous_frame[port_index] != port.leader.post.state {
                         //TODO Excessively moving memory around in this block
-                        println!("target before {:?}", target_interaction);
                         target_interaction = match interaction_iter.next() {
                             Some(interaction) => {
                                 target_indices.push(index);
@@ -265,6 +273,11 @@ fn check_interaction(
     return InteractionResult::NonContiguous;
 }
 
+//pub fn create_json(instances :QueryResult, replay_loc: Path, output_loc: Path) {
+//
+//   fs::write(output_loc, json);
+//}
+
 //TODO If it's possible, try avoiding reading all of the game into memory
 //TODO Export to clippi file
 //TODO Parse through multiple files
@@ -280,6 +293,7 @@ mod tests {
         let game = read_game(path).unwrap();
         let query = Query {
             player_name: None,
+            export: None,
             character: Internal::FOX,
             opponent: Internal::PIKACHU,
             interactions: vec![Interaction {
@@ -317,6 +331,7 @@ mod tests {
         let game = read_game(path).unwrap();
         let query = Query {
             player_name: None,
+            export: None,
             character: Internal::FOX,
             opponent: Internal::PIKACHU,
             interactions: vec![Interaction {
@@ -365,6 +380,7 @@ mod tests {
         let game = read_game(path).unwrap();
         let query = Query {
             player_name: None,
+            export: None,
             character: Internal::FOX,
             opponent: Internal::PIKACHU,
             interactions: vec![
@@ -382,6 +398,6 @@ mod tests {
         };
         let players = check_players(&game, &query).unwrap();
         let parsed = parse_game(game, query, players).unwrap();
-        assert_eq!(parsed.result, [[3645,3661], [6943, 6947], [12272, 12276]])
+        assert_eq!(parsed.result, [[3645, 3661], [6943, 6947], [12272, 12276]])
     }
 }

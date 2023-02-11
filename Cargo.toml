@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 peppi = "1.0.0-alpha.6"
 peekread = "0.1"
+clap = { version = "4.2.0", features = ["cargo"] }
 
