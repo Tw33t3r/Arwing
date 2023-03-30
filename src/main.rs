@@ -6,16 +6,13 @@ use std::{
 
 use clap::{arg, command, value_parser, Arg, ArgAction};
 
-use arwing::{check_players, parse_game, read_game, Query, Interaction};
-use peppi::model::enums::character::Internal;
+use arwing::{check_players, parse_game, read_game, Interaction};
+use peppi::model::enums::{action_state::State, character::Internal};
 
 fn parse_internal_character(env: &str) -> Result<Internal, Error> {
     match Internal::try_from(env) {
         Ok(character) => Ok(character),
-        Err(_) => Err(Error::new(
-            ErrorKind::Other,
-            "Character does not exist",
-        )),
+        Err(_) => Err(Error::new(ErrorKind::Other, "Character does not exist")),
     }
 }
 
@@ -68,24 +65,43 @@ fn main() {
 
     let name: Option<&String> = matches.get_one("name");
     let export: Option<&String> = matches.get_one("export");
-    
-    let player: &Internal = matches.get_one("player").unwrap();
-    let opponent: &Internal = matches.get_one("opponent").unwrap();
-    let path: &PathBuf = matches.get_one("directory").unwrap();
-    //TODO(Tweet): begin to parse matches
-    let interactions: Vec<Interaction> = matches.get_many("interaction");
 
-    //    let query = query::build(&args).unwrap_or_else(|err| {
-    //        println!("couldn't parse arguments: {err}");
-    //        process::exit(1);
-    //    });
-    //
-    //    let now = std::time::Instant::now();
-    //    let path = path::new("test.slp");
-    //    let game = read_game(path).unwrap();
-    //    let players = check_players(&game, &query).unwrap();
-    //    let parsed = parse_game(game, query, players).unwrap();
-    //    //create_json(parsed, path, query.export);
-    //    println!("parsed replay in {} μs", now.elapsed().as_micros());
-    //    println!("{:#?}", parsed.result);
+    let player: Internal = *matches.get_one("player").unwrap();
+    let opponent: Internal = *matches.get_one("opponent").unwrap();
+    let path: &PathBuf = matches.get_one("directory").unwrap();
+
+    let interactions: Vec<Interaction> = matches
+        .get_many("interaction")
+        .unwrap()
+        .into_iter()
+        .collect::<Vec<&String>>()
+        .chunks(3)
+        .map(|interaction| {
+            let from_player_result = Internal::try_from(&interaction[1][..]);
+            let from_player = match from_player_result {
+                Ok(Internal(from_player)) => from_player,
+                Err(error) => {
+                    panic!("Couldn't match the from_player in interactions {:?}", error)
+                }
+            };
+            Interaction {
+                action: State::from(interaction[0].parse().unwrap(), Internal(from_player)),
+                from_player: Internal(from_player),
+                //TODO(Tweet): Figure out how to fix the 1st input low number of within frames bug.
+                within: match interaction[2].as_str() {
+                    "None" => None,
+                    other => Some(other.parse().unwrap()),
+                },
+            }
+        })
+        .collect();
+
+    let now = std::time::Instant::now();
+    let path = Path::new("test.slp");
+    let game = read_game(path).unwrap();
+    let players = check_players(&game, player, opponent).unwrap();
+    let parsed = parse_game(game, interactions, players).unwrap();
+    //create_json(parsed, path, query.export);
+    println!("parsed replay in {} μs", now.elapsed().as_micros());
+    println!("{:#?}", parsed.result);
 }

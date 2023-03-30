@@ -18,81 +18,6 @@ pub struct Interaction {
     pub within: Option<u32>,
 }
 
-pub struct Query {
-    pub player_name: Option<String>,
-    pub export: Option<String>,
-    pub character: Internal,
-    pub opponent: Internal,
-    pub interactions: Vec<Interaction>,
-}
-
-impl Query {
-    //TODO learn clap, and try to use it instead of this
-    pub fn build(mut args: &[String]) -> Result<Query, &'static str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments");
-        }
-        args = &args[1..];
-
-        let mut name = None;
-        if args[0] == "--name" {
-            name = Some(&args[1]);
-            args = &args[2..];
-        }
-
-        let mut export = None;
-        if args[0] == "--export" {
-            export = Some(&args[1]);
-            args = &args[2..];
-        }
-
-        let character_result = Internal::try_from(&args[0][..]);
-        let character = match character_result {
-            Ok(Internal(character)) => character,
-            Err(error) => panic!("Couldn't match the player's character {:?}", error),
-        };
-
-        let opponent_result = Internal::try_from(&args[1][..]);
-        let opponent = match opponent_result {
-            Ok(Internal(opponent)) => opponent,
-            Err(error) => panic!("Couldn't match the opponent's character {:?}", error),
-        };
-
-        args = &args[2..];
-        let interactions: Vec<Interaction> = args
-            .chunks(3)
-            .map(|interaction| {
-                let from_player_result = Internal::try_from(&interaction[1][..]);
-                let from_player = match from_player_result {
-                    Ok(Internal(from_player)) => from_player,
-                    Err(error) => {
-                        panic!("Couldn't match the from_player in interactions {:?}", error)
-                    }
-                };
-                Interaction {
-                    //TODO Double check whether I want to use STATE names or state numbers slippi uses
-                    action: State::from(interaction[0].parse().unwrap(), Internal(character)),
-                    //TODO Refactor to use the input opponent, or character to handle dittos better
-                    from_player: Internal(from_player),
-                    within: match interaction[2].as_str() {
-                        "None" => None,
-                        other => Some(other.parse().unwrap()),
-                    },
-                }
-            })
-            .collect();
-        println!("Interactions are: {:?}", interactions);
-        Ok(Query {
-            //TODO I think cloned is slow here
-            player_name: name.cloned(),
-            export: export.cloned(),
-            character: Internal(character),
-            opponent: Internal(opponent),
-            interactions,
-        })
-    }
-}
-
 pub struct QueryResult {
     pub result: Vec<Vec<usize>>,
 }
@@ -109,7 +34,7 @@ enum InteractionResult {
     Target,
 }
 
-pub fn check_players(game: &Game, query: &Query) -> Option<Characters> {
+pub fn check_players(game: &Game, player: Internal, opponent: Internal) -> Option<Characters> {
     match &game.metadata.players {
         Some(players) => {
             if players.len() != 2 {
@@ -119,23 +44,27 @@ pub fn check_players(game: &Game, query: &Query) -> Option<Characters> {
             let p2;
             let char1_map = &players[0].characters.as_ref()?;
             let char2_map = &players[1].characters.as_ref()?;
+            println!("{:#?}", char1_map);
             // This is ugly, but it saves us from iterating over keys
             // Might break on zelda
-            if char1_map.contains_key(&query.character) {
-                p1 = query.character;
-                if char2_map.contains_key(&query.opponent) {
-                    p2 = query.opponent;
+            if char1_map.contains_key(&player) {
+                println!("{:#?}", player);
+                p1 = player;
+                if char2_map.contains_key(&opponent) {
+                    p2 = opponent;
                 } else {
                     return None;
                 };
-            } else if char1_map.contains_key(&query.opponent) {
-                p1 = query.opponent;
-                if char2_map.contains_key(&query.character) {
-                    p2 = query.character;
+            } else if char1_map.contains_key(&opponent) {
+                println!("{:#?}", opponent);
+                p1 = opponent;
+                if char2_map.contains_key(&player) {
+                    p2 = player;
                 } else {
                     return None;
                 };
             } else {
+                println!("No matches");
                 return None;
             }
             return Some(Characters { p1, p2 });
@@ -155,13 +84,13 @@ pub fn read_game(infile: &Path) -> Result<Game, Box<dyn Error>> {
 
 pub fn parse_game(
     game: Game,
-    query: Query,
+    interactions: Vec<Interaction>,
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
     let result: QueryResult;
     match game.frames {
         Frames::P2(frames) => {
-            result = parse_frames(frames, query.interactions, players).unwrap();
+            result = parse_frames(frames, interactions, players).unwrap();
         }
         _ => panic!("Only 2 player games are supported at this moment."),
     }
@@ -176,6 +105,7 @@ pub fn parse_frames(
     let mut target_indices: Vec<usize> = Vec::new();
     let mut result = Vec::new();
 
+    //Some state that doesn't exist in non-crazy-hand games
     let mut previous_frame = [
         State::Common(Common::CAPTURE_CRAZY_HAND),
         State::Common(Common::CAPTURE_CRAZY_HAND),
