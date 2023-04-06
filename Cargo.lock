@@ -90,6 +90,8 @@ dependencies = [
  "clap",
  "peekread",
  "peppi",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,6 +1,12 @@
-use std::{error::Error, fs::File, path::Path};
+use std::{
+    error::Error,
+    fs,
+    path::{Path, PathBuf},
+};
 
 use peekread::BufPeekReader;
+
+use serde::Serialize;
 
 use peppi::model::{
     enums::{
@@ -22,9 +28,26 @@ pub struct QueryResult {
     pub result: Vec<Vec<usize>>,
 }
 
+pub struct ParsedGame {
+    pub query_result: QueryResult,
+    pub loc: PathBuf,
+}
+
 pub struct Characters {
     pub p1: Internal,
     pub p2: Internal,
+}
+
+#[derive(Serialize)]
+struct ClippiJson {
+    pub queue: Vec<DolphinEntry>,
+}
+
+#[derive(Serialize)]
+struct DolphinEntry {
+    path: PathBuf,
+    startFrame: usize,
+    endFrame: usize,
 }
 
 enum InteractionResult {
@@ -44,11 +67,9 @@ pub fn check_players(game: &Game, player: Internal, opponent: Internal) -> Optio
             let p2;
             let char1_map = &players[0].characters.as_ref()?;
             let char2_map = &players[1].characters.as_ref()?;
-            println!("{:#?}", char1_map);
             // This is ugly, but it saves us from iterating over keys
             // Might break on zelda
             if char1_map.contains_key(&player) {
-                println!("{:#?}", player);
                 p1 = player;
                 if char2_map.contains_key(&opponent) {
                     p2 = opponent;
@@ -56,7 +77,6 @@ pub fn check_players(game: &Game, player: Internal, opponent: Internal) -> Optio
                     return None;
                 };
             } else if char1_map.contains_key(&opponent) {
-                println!("{:#?}", opponent);
                 p1 = opponent;
                 if char2_map.contains_key(&player) {
                     p2 = player;
@@ -75,7 +95,8 @@ pub fn check_players(game: &Game, player: Internal, opponent: Internal) -> Optio
 
 pub fn read_game(infile: &Path) -> Result<Game, Box<dyn Error>> {
     let mut buf = BufPeekReader::new(
-        File::open(infile).map_err(|e| format!("couldn't open `{}`: {}", infile.display(), e))?,
+        fs::File::open(infile)
+            .map_err(|e| format!("couldn't open `{}`: {}", infile.display(), e))?,
     );
     buf.set_min_read_size(8192);
     let game = peppi::game(&mut buf, None, None)?;
@@ -203,10 +224,37 @@ fn check_interaction(
     return InteractionResult::NonContiguous;
 }
 
-//pub fn create_json(instances :QueryResult, replay_loc: Path, output_loc: Path) {
-//
-//   fs::write(output_loc, json);
-//}
+pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {
+    let mut clippi: ClippiJson = ClippiJson { queue: vec![] };
+
+    let game_iter = games.iter();
+    for (_, game) in game_iter.enumerate() {
+        //TODO(Tweet): Test speed of this vs copying game.loc in the clippi.queue.push
+        let loc = &game.loc;
+        //TODO(Tweet): game.query_result.result is pretty ugly here, maybe refactor the structs
+        let occurrence_iter = game.query_result.result.iter();
+        for (_, occurrence) in occurrence_iter.enumerate() {
+            let first_frame = occurrence[0];
+            let last_frame: usize = match occurrence.last() {
+                Some(frame) => *frame,
+                None => panic!("No value found in matched frames"),
+            };
+            clippi.queue.push(DolphinEntry {
+                path: loc.to_path_buf(),
+                startFrame: first_frame,
+                endFrame: last_frame,
+            });
+        }
+    }
+
+    let json = serde_json::to_string(&clippi);
+    match json {
+        Ok(json) => {
+            fs::write(output_loc, json).unwrap_or_else(|_| panic!("Could not write to file"));
+        }
+        Err(_) => panic!("Could not serialize the gathered query data"),
+    }
+}
 
 //TODO If it's possible, try avoiding reading all of the game into memory
 //TODO Export to clippi file
@@ -221,19 +269,15 @@ mod tests {
     fn special_moves() {
         let path = Path::new("test.slp");
         let game = read_game(path).unwrap();
-        let query = Query {
-            player_name: None,
-            export: None,
-            character: Internal::FOX,
-            opponent: Internal::PIKACHU,
-            interactions: vec![Interaction {
-                action: State::Fox(Fox::BLASTER_AIR_LOOP),
-                from_player: Internal::FOX,
-                within: None,
-            }],
-        };
-        let players = check_players(&game, &query).unwrap();
-        let parsed = parse_game(game, query, players).unwrap();
+        let character = Internal::FOX;
+        let opponent = Internal::PIKACHU;
+        let interactions = vec![Interaction {
+            action: State::Fox(Fox::BLASTER_AIR_LOOP),
+            from_player: Internal::FOX,
+            within: None,
+        }];
+        let players = check_players(&game, character, opponent).unwrap();
+        let parsed = parse_game(game, interactions, players).unwrap();
         assert_eq!(
             parsed.result,
             vec![
@@ -259,19 +303,15 @@ mod tests {
     fn dairs() {
         let path = Path::new("test.slp");
         let game = read_game(path).unwrap();
-        let query = Query {
-            player_name: None,
-            export: None,
-            character: Internal::FOX,
-            opponent: Internal::PIKACHU,
-            interactions: vec![Interaction {
-                action: State::Common(Common::ATTACK_AIR_LW),
-                from_player: Internal::FOX,
-                within: None,
-            }],
-        };
-        let players = check_players(&game, &query).unwrap();
-        let parsed = parse_game(game, query, players).unwrap();
+        let character = Internal::FOX;
+        let opponent = Internal::PIKACHU;
+        let interactions = vec![Interaction {
+            action: State::Common(Common::ATTACK_AIR_LW),
+            from_player: Internal::FOX,
+            within: None,
+        }];
+        let players = check_players(&game, character, opponent).unwrap();
+        let parsed = parse_game(game, interactions, players).unwrap();
         assert_eq!(
             parsed.result,
             [
@@ -308,26 +348,22 @@ mod tests {
     fn dairs_that_hit() {
         let path = Path::new("test.slp");
         let game = read_game(path).unwrap();
-        let query = Query {
-            player_name: None,
-            export: None,
-            character: Internal::FOX,
-            opponent: Internal::PIKACHU,
-            interactions: vec![
-                Interaction {
-                    action: State::Common(Common::ATTACK_AIR_LW),
-                    from_player: Internal::FOX,
-                    within: None,
-                },
-                Interaction {
-                    action: State::Common(Common::DAMAGE_AIR_2),
-                    from_player: Internal::PIKACHU,
-                    within: Some(200),
-                },
-            ],
-        };
-        let players = check_players(&game, &query).unwrap();
-        let parsed = parse_game(game, query, players).unwrap();
+        let character = Internal::FOX;
+        let opponent = Internal::PIKACHU;
+        let interactions = vec![
+            Interaction {
+                action: State::Common(Common::ATTACK_AIR_LW),
+                from_player: Internal::FOX,
+                within: None,
+            },
+            Interaction {
+                action: State::Common(Common::DAMAGE_AIR_2),
+                from_player: Internal::PIKACHU,
+                within: Some(200),
+            },
+        ];
+        let players = check_players(&game, character, opponent).unwrap();
+        let parsed = parse_game(game, interactions, players).unwrap();
         assert_eq!(parsed.result, [[3645, 3661], [6943, 6947], [12272, 12276]])
     }
 }

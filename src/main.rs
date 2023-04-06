@@ -6,7 +6,7 @@ use std::{
 
 use clap::{arg, command, value_parser, Arg, ArgAction};
 
-use arwing::{check_players, parse_game, read_game, Interaction};
+use arwing::{check_players, create_json, parse_game, read_game, Interaction, ParsedGame};
 use peppi::model::enums::{action_state::State, character::Internal};
 
 fn parse_internal_character(env: &str) -> Result<Internal, Error> {
@@ -64,7 +64,7 @@ fn main() {
         .get_matches();
 
     let name: Option<&String> = matches.get_one("name");
-    let export: Option<&String> = matches.get_one("export");
+    let export_option: Option<&PathBuf> = matches.get_one("export");
 
     let player: Internal = *matches.get_one("player").unwrap();
     let opponent: Internal = *matches.get_one("opponent").unwrap();
@@ -97,11 +97,19 @@ fn main() {
         .collect();
 
     let now = std::time::Instant::now();
-    let path = Path::new("test.slp");
-    let game = read_game(path).unwrap();
+    let path = PathBuf::from("test.slp");
+    let game = read_game(path.as_path()).unwrap();
     let players = check_players(&game, player, opponent).unwrap();
     let parsed = parse_game(game, interactions, players).unwrap();
-    //create_json(parsed, path, query.export);
+    match export_option {
+        Some(export) => create_json(
+            vec![ParsedGame {
+                query_result: parsed,
+                loc: path,
+            }],
+            export.to_path_buf(),
+        ),
+        None => {},
+    }
     println!("parsed replay in {} μs", now.elapsed().as_micros());
-    println!("{:#?}", parsed.result);
 }
