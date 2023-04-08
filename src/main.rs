@@ -1,7 +1,8 @@
 use std::{
+    ffi::OsStr,
+    fs::canonicalize,
     io::{Error, ErrorKind},
-    path::{Path, PathBuf},
-    process,
+    path::PathBuf,
 };
 
 use clap::{arg, command, value_parser, Arg, ArgAction};
@@ -68,7 +69,8 @@ fn main() {
 
     let player: Internal = *matches.get_one("player").unwrap();
     let opponent: Internal = *matches.get_one("opponent").unwrap();
-    let path: &PathBuf = matches.get_one("directory").unwrap();
+    let path: PathBuf = canonicalize(matches.get_one::<PathBuf>("directory").unwrap())
+        .unwrap_or_else(|_| panic!("Directory provided was not valid"));
 
     let interactions: Vec<Interaction> = matches
         .get_many("interaction")
@@ -97,19 +99,21 @@ fn main() {
         .collect();
 
     let now = std::time::Instant::now();
-    let path = PathBuf::from("test.slp");
-    let game = read_game(path.as_path()).unwrap();
-    let players = check_players(&game, player, opponent).unwrap();
-    let parsed = parse_game(game, interactions, players).unwrap();
-    match export_option {
-        Some(export) => create_json(
-            vec![ParsedGame {
-                query_result: parsed,
-                loc: path,
-            }],
-            export.to_path_buf(),
-        ),
-        None => {},
+
+    if path.is_file() && path.extension() == Some(OsStr::new("slp")) {
+        let game = read_game(path.as_path()).unwrap();
+        let players = check_players(&game, player, opponent).unwrap();
+        let parsed = parse_game(game, interactions, players).unwrap();
+        match export_option {
+            Some(export) => create_json(
+                vec![ParsedGame {
+                    query_result: parsed,
+                    loc: path,
+                }],
+                export.to_path_buf(),
+            ),
+            None => {}
+        }
+        println!("parsed replay in {} μs", now.elapsed().as_micros());
     }
-    println!("parsed replay in {} μs", now.elapsed().as_micros());
 }

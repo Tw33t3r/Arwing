@@ -1,3 +1,6 @@
+#![allow(non_snake_case)]
+// Non snake case is allowed in order for serde to export proper json to clippi
+// It seems like allowing for specific lines is broken in this case
 use std::{
     error::Error,
     fs,
@@ -234,6 +237,8 @@ pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {
         //TODO(Tweet): game.query_result.result is pretty ugly here, maybe refactor the structs
         let occurrence_iter = game.query_result.result.iter();
         for (_, occurrence) in occurrence_iter.enumerate() {
+            //TODO(Tweet): Offset first frame, by the -frames found in slippi,
+            //TODO(Tweet): add buffers so players have context and can see results more
             let first_frame = occurrence[0];
             let last_frame: usize = match occurrence.last() {
                 Some(frame) => *frame,
@@ -256,8 +261,7 @@ pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {
     }
 }
 
-//TODO If it's possible, try avoiding reading all of the game into memory
-//TODO Export to clippi file
+//TODO If it's possible, try avoiding reading all of the game into memory at a time
 //TODO Parse through multiple files
 #[cfg(test)]
 mod tests {
