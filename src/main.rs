@@ -6,6 +6,7 @@ use std::{
 };
 
 use clap::{arg, command, value_parser, Arg, ArgAction};
+use glob::glob;
 
 use arwing::{check_players, create_json, parse_game, read_game, Interaction, ParsedGame};
 use peppi::model::enums::{action_state::State, character::Internal};
@@ -100,7 +101,37 @@ fn main() {
 
     let now = std::time::Instant::now();
 
-    if path.is_file() && path.extension() == Some(OsStr::new("slp")) {
+    //TODO(Tweet): if it's a directory parse each directory recursively for slippi files, while
+    //appending if each path is a slippi file. After that function parse through spawning a new
+    //thread for each path.
+
+    if path.is_dir() {
+        //glob-match advertises that it might be a faster library for this use case
+        for entry in glob(
+            //TODO(Tweet): Excessive casting
+            &(path
+                .as_path()
+                .to_str()
+                .expect("Could not convert directory to string, does the OS use utf-8?")
+                .to_owned()
+                + "/**/*.slp"),
+        )
+        .expect("Failed to read glob pattern")
+        {
+            match entry {
+                Ok(path) => {
+                    //spawn a new thread for each game, read it, check the players, parse it, merge
+                    //with the parse result, then finally export if the export requires it
+                    println!("{:?}", path.display());
+                    let game = read_game(path.as_path()).unwrap();
+                    let players = check_players(&game, player, opponent).unwrap();
+                    let parsed = parse_game(game, interactions, players).unwrap();
+                }
+                Err(e) => println!("{:?}", e),
+            }
+        }
+    } else if path.extension() == Some(OsStr::new("slp")) {
+        //Speed of single file parsing .252057s on dev machine
         let game = read_game(path.as_path()).unwrap();
         let players = check_players(&game, player, opponent).unwrap();
         let parsed = parse_game(game, interactions, players).unwrap();
@@ -114,6 +145,6 @@ fn main() {
             ),
             None => {}
         }
-        println!("parsed replay in {} μs", now.elapsed().as_micros());
     }
+    println!("parsed in {} μs", now.elapsed().as_micros());
 }
