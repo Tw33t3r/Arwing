@@ -70,8 +70,10 @@ fn main() {
 
     let player: Internal = *matches.get_one("player").unwrap();
     let opponent: Internal = *matches.get_one("opponent").unwrap();
-    let path: PathBuf = canonicalize(matches.get_one::<PathBuf>("directory").unwrap())
-        .unwrap_or_else(|_| panic!("Directory provided was not valid"));
+    let path: PathBuf = matches
+        .get_one::<PathBuf>("directory")
+        .unwrap()
+        .to_path_buf();
 
     let interactions: Vec<Interaction> = matches
         .get_many("interaction")
@@ -119,18 +121,23 @@ fn main() {
             match entry {
                 Ok(path) => {
                     //TODO(Tweet): spawn a new thread for each game
-                    let game = read_game(path.as_path()).unwrap();
-                    let players_result = check_players(&game, player, opponent);
-                    match players_result {
-                        Some(players) => {
-                            let parsed = parse_game(game, &interactions, players).unwrap();
-                            parsed_games.push(ParsedGame {
-                                query_result: parsed,
-                                loc: path,
-                            });
+                    let _game = match read_game(path.as_path()) {
+                        Ok(game) => {
+                            let players_result = check_players(&game, player, opponent);
+                            match players_result {
+                                Some(players) => {
+                                    let parsed = parse_game(game, &interactions, players).unwrap();
+                                    parsed_games.push(ParsedGame {
+                                        query_result: parsed,
+                                        loc: canonicalize(path).unwrap(),
+                                    });
+                                }
+                                None => {}
+                            }
                         }
-                        None => {}
-                    }
+                        //Ignores game if slippi finds an error
+                        Err(_) => {}
+                    };
                 }
                 Err(e) => println!("{:?}", e),
             }
@@ -142,7 +149,7 @@ fn main() {
         let parsed = parse_game(game, &interactions, players).unwrap();
         parsed_games.push(ParsedGame {
             query_result: parsed,
-            loc: path,
+            loc: canonicalize(path).unwrap(),
         });
     }
 
