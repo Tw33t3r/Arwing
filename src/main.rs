@@ -101,9 +101,7 @@ fn main() {
 
     let now = std::time::Instant::now();
 
-    //TODO(Tweet): if it's a directory parse each directory recursively for slippi files, while
-    //appending if each path is a slippi file. After that function parse through spawning a new
-    //thread for each path.
+    let mut parsed_games: Vec<ParsedGame> = Vec::new();
 
     if path.is_dir() {
         //glob-match advertises that it might be a faster library for this use case
@@ -120,12 +118,19 @@ fn main() {
         {
             match entry {
                 Ok(path) => {
-                    //spawn a new thread for each game, read it, check the players, parse it, merge
-                    //with the parse result, then finally export if the export requires it
-                    println!("{:?}", path.display());
+                    //TODO(Tweet): spawn a new thread for each game
                     let game = read_game(path.as_path()).unwrap();
-                    let players = check_players(&game, player, opponent).unwrap();
-                    let parsed = parse_game(game, interactions, players).unwrap();
+                    let players_result = check_players(&game, player, opponent);
+                    match players_result {
+                        Some(players) => {
+                            let parsed = parse_game(game, &interactions, players).unwrap();
+                            parsed_games.push(ParsedGame {
+                                query_result: parsed,
+                                loc: path,
+                            });
+                        }
+                        None => {}
+                    }
                 }
                 Err(e) => println!("{:?}", e),
             }
@@ -134,17 +139,17 @@ fn main() {
         //Speed of single file parsing .252057s on dev machine
         let game = read_game(path.as_path()).unwrap();
         let players = check_players(&game, player, opponent).unwrap();
-        let parsed = parse_game(game, interactions, players).unwrap();
-        match export_option {
-            Some(export) => create_json(
-                vec![ParsedGame {
-                    query_result: parsed,
-                    loc: path,
-                }],
-                export.to_path_buf(),
-            ),
-            None => {}
-        }
+        let parsed = parse_game(game, &interactions, players).unwrap();
+        parsed_games.push(ParsedGame {
+            query_result: parsed,
+            loc: path,
+        });
+    }
+
+    match export_option {
+        Some(export) => create_json(parsed_games, export.to_path_buf()),
+        //TODO(Tweet): Print query_results
+        None => {}
     }
     println!("parsed in {} μs", now.elapsed().as_micros());
 }

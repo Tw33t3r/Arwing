@@ -8,7 +8,6 @@ use std::{
 };
 
 use peekread::BufPeekReader;
-
 use serde::Serialize;
 
 use peppi::model::{
@@ -87,7 +86,6 @@ pub fn check_players(game: &Game, player: Internal, opponent: Internal) -> Optio
                     return None;
                 };
             } else {
-                println!("No matches");
                 return None;
             }
             return Some(Characters { p1, p2 });
@@ -108,13 +106,13 @@ pub fn read_game(infile: &Path) -> Result<Game, Box<dyn Error>> {
 
 pub fn parse_game(
     game: Game,
-    interactions: Vec<Interaction>,
+    interactions: &Vec<Interaction>,
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
     let result: QueryResult;
     match game.frames {
         Frames::P2(frames) => {
-            result = parse_frames(frames, interactions, players).unwrap();
+            result = parse_frames(frames, &interactions, players).unwrap();
         }
         _ => panic!("Only 2 player games are supported at this moment."),
     }
@@ -123,7 +121,7 @@ pub fn parse_game(
 
 pub fn parse_frames(
     frames: Vec<Frame<2>>,
-    interactions: Vec<Interaction>,
+    interactions: &Vec<Interaction>,
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
     let mut target_indices: Vec<usize> = Vec::new();
@@ -281,7 +279,7 @@ mod tests {
             within: None,
         }];
         let players = check_players(&game, character, opponent).unwrap();
-        let parsed = parse_game(game, interactions, players).unwrap();
+        let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(
             parsed.result,
             vec![
@@ -315,7 +313,7 @@ mod tests {
             within: None,
         }];
         let players = check_players(&game, character, opponent).unwrap();
-        let parsed = parse_game(game, interactions, players).unwrap();
+        let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(
             parsed.result,
             [
@@ -367,7 +365,7 @@ mod tests {
             },
         ];
         let players = check_players(&game, character, opponent).unwrap();
-        let parsed = parse_game(game, interactions, players).unwrap();
+        let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(parsed.result, [[3645, 3661], [6943, 6947], [12272, 12276]])
     }
 }
