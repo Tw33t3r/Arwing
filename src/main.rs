@@ -82,7 +82,7 @@ fn main() {
         .collect::<Vec<&String>>()
         .chunks(3)
         .map(|interaction| {
-            let from_player_result = Internal::try_from(&interaction[1][..]);
+            let from_player_result = Internal::try_from(&interaction[0][..]);
             let from_player = match from_player_result {
                 Ok(Internal(from_player)) => from_player,
                 Err(error) => {
@@ -90,7 +90,7 @@ fn main() {
                 }
             };
             Interaction {
-                action: State::from(interaction[0].parse().unwrap(), Internal(from_player)),
+                action: State::from(interaction[1].parse().unwrap(), Internal(from_player)),
                 from_player: Internal(from_player),
                 //TODO(Tweet): Figure out how to fix the 1st input low number of within frames bug.
                 within: match interaction[2].as_str() {
