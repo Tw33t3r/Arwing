@@ -230,20 +230,23 @@ pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {
 
     let game_iter = games.iter();
     for (_, game) in game_iter.enumerate() {
-        //TODO(Tweet): Test speed of this vs copying game.loc in the clippi.queue.push
-        let loc = &game.loc;
         //TODO(Tweet): game.query_result.result is pretty ugly here, maybe refactor the structs
         let occurrence_iter = game.query_result.result.iter();
         for (_, occurrence) in occurrence_iter.enumerate() {
-            //TODO(Tweet): Offset first frame, by the -frames found in slippi,
-            //TODO(Tweet): add buffers so players have context and can see results more
-            let first_frame = occurrence[0];
+            // slp files start at index -123. User input starts at 0
+            let first_frame = {
+                if occurrence[0] < 400 {
+                    0
+                } else {
+                    occurrence[0] - 400
+                }
+            };
             let last_frame: usize = match occurrence.last() {
-                Some(frame) => *frame,
+                Some(frame) => *frame + 200,
                 None => panic!("No value found in matched frames"),
             };
             clippi.queue.push(DolphinEntry {
-                path: loc.to_path_buf(),
+                path: game.loc.to_path_buf(),
                 startFrame: first_frame,
                 endFrame: last_frame,
             });
@@ -260,7 +263,6 @@ pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {
 }
 
 //TODO If it's possible, try avoiding reading all of the game into memory at a time
-//TODO Parse through multiple files
 #[cfg(test)]
 mod tests {
     use peppi::model::enums::action_state::{Common, Fox};
