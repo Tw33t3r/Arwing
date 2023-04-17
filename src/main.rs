@@ -155,8 +155,13 @@ fn main() {
 
     match export_option {
         Some(export) => create_json(parsed_games, export.to_path_buf()),
-        //TODO(Tweet): Print query_results
-        None => {}
+        None => {
+            for game in parsed_games {
+                for parse in game.query_result.result {
+                    println!("Found frames: {:?}, in {:?}", parse, game.loc)
+                }
+            }
+        }
     }
     println!("parsed in {} μs", now.elapsed().as_micros());
 }
