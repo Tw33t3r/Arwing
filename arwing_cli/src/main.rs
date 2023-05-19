@@ -8,7 +8,7 @@ use std::{
 use clap::{arg, command, value_parser, Arg, ArgAction};
 use glob::glob;
 
-use arwing::{check_players, create_json, parse_game, read_game, Interaction, ParsedGame};
+use arwing_core::{check_players, create_json, parse_game, read_game, Interaction, ParsedGame};
 use peppi::model::enums::{action_state::State, character::Internal};
 
 fn parse_internal_character(env: &str) -> Result<Internal, Error> {
