@@ -121,7 +121,7 @@ const Container: ParentComponent<ContainerProps> = (props) => {
   const select = useSelect();
   return (
     <div
-      class={`solid-select-container ${props.class !== undefined ? props.class : ""
+      class={`relative data-disabled:(pointer-events-none) ${props.class !== undefined ? props.class : ""
         }`}
       data-disabled={select.disabled}
       onFocusIn={select.onFocusIn}
@@ -148,7 +148,10 @@ const Control: Component<ControlProps> = (props) => {
 
   return (
     <div
-      class="solid-select-control"
+      class="py-1 px-2 border border-gray-200 rounded leading-normal 
+      focus-within:(outline-dotted-gray-300) grid grid-cols-1 
+      data-multiple:data-has-value:(flex flex-wrap items-stretch gap-1) 
+      data-disabled:(border-gray-300 bg-gray-100)"
       data-multiple={select.multiple}
       data-has-value={select.hasValue()}
       data-disabled={select.disabled}
@@ -184,18 +187,18 @@ const Control: Component<ControlProps> = (props) => {
 type PlaceholderProps = Pick<CommonProps, "placeholder">;
 
 const Placeholder: ParentComponent<PlaceholderProps> = (props) => {
-  return <div class="solid-select-placeholder">{props.children}</div>;
+  return <div class="col-start-1 row-start-1 text-sm p-4 pl-10 z-10 text-gray-400 border border-gray-300 rounded-lg">{props.children}</div>;
 };
 
 const SingleValue: ParentComponent<{}> = (props) => {
-  return <div class="solid-select-single-value">{props.children}</div>;
+  return <div class="col-start-1 row-start-1 text-sm text-gray-900 p-4 pl-10 z-10 border border-gray-300 rounded-lg">{props.children}</div>;
 };
 
 const MultiValue: ParentComponent<{ onRemove: () => void }> = (props) => {
   const select = useSelect();
 
   return (
-    <div class="solid-select-multi-value">
+    <div class="flex items-center rounded px-[4px] bg-gray-100 text-[85%] leading-[inherit]">
       {props.children}
       <button
         type="button"
@@ -219,7 +222,8 @@ const Input: Component<InputProps> = (props) => {
     <input
       id={props.id}
       name={props.name}
-      class="solid-select-input"
+      class="col-start-1 row-start-1 p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50
+      focus:ring-blue-500 focus:border-blue-500"
       data-multiple={select.multiple}
       data-is-active={select.isActive()}
       type="text"
@@ -259,11 +263,11 @@ const List: Component<ListProps> = (props) => {
 
   return (
     <Show when={select.isOpen()}>
-      <div class="solid-select-list">
+      <div class="z-20 bg-gray-50 absolute min-w-full shadow-lg whitespace-nowrap rounded-sm mt-1 p-2 z-1 overflow-y-auto max-h-50vh" >
         <Show
           when={!props.loading}
           fallback={
-            <div class="solid-select-list-placeholder">
+            <div class="px-4 py-2 cursor-default select-none">
               {props.loadingPlaceholder}
             </div>
           }
@@ -271,7 +275,7 @@ const List: Component<ListProps> = (props) => {
           <For
             each={select.options()}
             fallback={
-              <div class="solid-select-list-placeholder">
+              <div class="px-4 py-2 cursor-default select-none">
                 {props.emptyPlaceholder}
               </div>
             }
@@ -305,7 +309,10 @@ const Option: ParentComponent<OptionProps> = (props) => {
       ref={scrollIntoViewOnFocus}
       data-disabled={select.isOptionDisabled(props.option)}
       data-focused={select.isOptionFocused(props.option)}
-      class="solid-select-option"
+      class="px-4 py-2 cursor-default text-sm text-gray-900 select-none
+      hover:bg-gray-200 data-focused:bg-gray-100
+      data-disabled:(pointer-events-none text-gray-400)
+      mark:(underline text-[unset] bg-[unset])"
       onClick={() => select.pickOption(props.option)}
     >
       {props.children}

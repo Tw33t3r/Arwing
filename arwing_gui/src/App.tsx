@@ -9,6 +9,7 @@ import { characters } from "./consts/characters";
 function App() {
   const [greetMsg, setGreetMsg] = createSignal("");
   const [name, setName] = createSignal("");
+  const [player, setPlayer] = createSignal("");
 
   //TODO(Tweet): Here is where we will query arwing_core 
   async function greet() {
@@ -18,7 +19,7 @@ function App() {
 
   const characterOptions = createOptions(characters.map(character => (character.name)));
 
-  function characterSearch(searchString: string) {
+  function characte(searchString: string) {
 
     setName(searchString)
   }
@@ -31,17 +32,14 @@ function App() {
       <div >
         <div>
           {/* TODO(Tweet): change the onchange to filter through characters from character enums */}
-          <input
-            class="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-            id="greet-input"
-            onChange={(e) => characterSearch(e.currentTarget.value)}
+          <Select
             placeholder="Player"
+            onChange={(e) => setPlayer(e.currentTarget.value)}
+            {...characterOptions}
           />
-          <input
-            class="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-            id="greet-input"
-            onChange={(e) => setName(e.currentTarget.value)}
+          <Select
             placeholder="Opponent"
+            {...characterOptions}
           />
           <button type="button" onClick={() => greet()}>
             Greet
@@ -51,7 +49,7 @@ function App() {
       </div>
 
       <p>{greetMsg()}</p>
-      <Select class="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" {...characterOptions} />
+      <Select {...characterOptions} />
     </div >
   );
 }
