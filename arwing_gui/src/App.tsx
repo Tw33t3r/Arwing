@@ -8,21 +8,16 @@ import { characters } from "./consts/characters";
 
 function App() {
   const [greetMsg, setGreetMsg] = createSignal("");
-  const [name, setName] = createSignal("");
   const [player, setPlayer] = createSignal("");
+  const [opponent, setOpponent] = createSignal("");
 
   //TODO(Tweet): Here is where we will query arwing_core 
-  async function greet() {
+  async function search() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name: name() }));
+    console.log(opponent());
   }
 
   const characterOptions = createOptions(characters.map(character => (character.name)));
-
-  function characte(searchString: string) {
-
-    setName(searchString)
-  }
 
   return (
     <div class="bg-gray-100">
@@ -30,26 +25,31 @@ function App() {
         Matchup
       </h1 >
       <div >
-        <div>
+        <div class="w-full grid grid-cols-4">
           {/* TODO(Tweet): change the onchange to filter through characters from character enums */}
           <Select
             placeholder="Player"
-            onChange={(e) => setPlayer(e.currentTarget.value)}
+            onChange={(e) => setPlayer(e)}
             {...characterOptions}
           />
           <Select
             placeholder="Opponent"
+            onChange={(e) =>
+              setOpponent(e)
+            }
             {...characterOptions}
           />
-          <button type="button" onClick={() => greet()}>
-            Greet
-          </button>
         </div>
 
+        <button
+          type="button"
+          class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2"
+          onClick={() => search()}>
+          Search
+        </button>
       </div>
 
       <p>{greetMsg()}</p>
-      <Select {...characterOptions} />
     </div >
   );
 }

@@ -121,7 +121,7 @@ const Container: ParentComponent<ContainerProps> = (props) => {
   const select = useSelect();
   return (
     <div
-      class={`relative data-disabled:(pointer-events-none) ${props.class !== undefined ? props.class : ""
+      class={`col-span-1 data-disabled:(pointer-events-none) ${props.class !== undefined ? props.class : ""
         }`}
       data-disabled={select.disabled}
       onFocusIn={select.onFocusIn}
@@ -148,10 +148,7 @@ const Control: Component<ControlProps> = (props) => {
 
   return (
     <div
-      class="py-1 px-2 border border-gray-200 rounded leading-normal 
-      focus-within:(outline-dotted-gray-300) grid grid-cols-1 
-      data-multiple:data-has-value:(flex flex-wrap items-stretch gap-1) 
-      data-disabled:(border-gray-300 bg-gray-100)"
+      class="py-1 px-2 border border-gray-200 rounded leading-normal "
       data-multiple={select.multiple}
       data-has-value={select.hasValue()}
       data-disabled={select.disabled}
@@ -187,11 +184,11 @@ const Control: Component<ControlProps> = (props) => {
 type PlaceholderProps = Pick<CommonProps, "placeholder">;
 
 const Placeholder: ParentComponent<PlaceholderProps> = (props) => {
-  return <div class="col-start-1 row-start-1 text-sm p-4 pl-10 z-10 text-gray-400 border border-gray-300 rounded-lg">{props.children}</div>;
+  return <div class="absolute text-sm p-4 pl-10 z-10 text-gray-400">{props.children}</div>;
 };
 
 const SingleValue: ParentComponent<{}> = (props) => {
-  return <div class="col-start-1 row-start-1 text-sm text-gray-900 p-4 pl-10 z-10 border border-gray-300 rounded-lg">{props.children}</div>;
+  return <div class="absolute text-sm text-gray-900 p-4 pl-10 z-10">{props.children}</div>;
 };
 
 const MultiValue: ParentComponent<{ onRemove: () => void }> = (props) => {
@@ -222,7 +219,7 @@ const Input: Component<InputProps> = (props) => {
     <input
       id={props.id}
       name={props.name}
-      class="col-start-1 row-start-1 p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50
+      class="p-4 pl-10 w-full text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50
       focus:ring-blue-500 focus:border-blue-500"
       data-multiple={select.multiple}
       data-is-active={select.isActive()}
@@ -263,7 +260,7 @@ const List: Component<ListProps> = (props) => {
 
   return (
     <Show when={select.isOpen()}>
-      <div class="z-20 bg-gray-50 absolute min-w-full shadow-lg whitespace-nowrap rounded-sm mt-1 p-2 z-1 overflow-y-auto max-h-50vh" >
+      <div class="z-20 bg-gray-50 absolute min-w-fit shadow-lg whitespace-nowrap rounded-sm mt-1 p-2 z-1 overflow-y-auto max-h-50vh" >
         <Show
           when={!props.loading}
           fallback={
