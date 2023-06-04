@@ -6,7 +6,7 @@ import { appDataDir } from '@tauri-apps/api/path';
 import { createOptions } from "@thisbeyond/solid-select";
 
 import { Select } from "./common-components/select";
-import { characters } from "./consts/characters";
+import { characters, moves } from "./consts/characters";
 
 function App() {
   const [greetMsg, setGreetMsg] = createSignal("");
@@ -28,16 +28,20 @@ function App() {
       defaultPath: await appDataDir(),
     });
     if (Array.isArray(selected)) {
-      // user selected multiple directories
+      // TODO: search in multiple folders  
       setSelected(selected[0]);
     } else if (selected === null) {
-      // user cancelled the selection
+      //TODO: Add error here
     } else {
-      // user selected a single directory
       setSelected(selected);
     }
   }
+
+  function setInteractionFrom(from: String) {
+  }
+
   const characterOptions = createOptions(characters.map(character => (character.name)));
+  const moveOptions = createOptions(moves.map(move => (move.name)));
 
   return (
     <div class="bg-gray-100">
@@ -66,7 +70,22 @@ function App() {
             SLP Folder
           </button>
         </div>
-
+        <h2 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl lg:text-5xl">
+          Interaction
+        </h2>
+        <div class="w-full grid grid-cols-3">
+          <Select
+            placeholder="Character"
+            onChange={(e) =>
+              setInteractionFrom(e)
+            }
+            {...createOptions([player(), opponent()])}
+          />
+          <div class="col-span-1 relative">
+            <input type="text" id="floating_outlined" class="block py-3 px-2 w-full border border-gray-200 rounded leading-normal focus:outline-none focus:ring-4 focus:border-blue-600 peer" placeholder=" " />
+            <label for="floating_outlined" class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-1">Frames Until This Move</label>
+          </div>
+        </div>
         <button
           type="button"
           class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2"
