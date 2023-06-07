@@ -148,7 +148,7 @@ const Control: Component<ControlProps> = (props) => {
 
   return (
     <div
-      class="py-1 px-2 w-1/4 border border-gray-200 rounded leading-normal "
+      class="py-1 px-2 border border-gray-200 rounded leading-normal "
       data-multiple={select.multiple}
       data-has-value={select.hasValue()}
       data-disabled={select.disabled}

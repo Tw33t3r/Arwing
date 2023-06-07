@@ -6,18 +6,18 @@ import { appDataDir } from '@tauri-apps/api/path';
 import { createOptions } from "@thisbeyond/solid-select";
 
 import { Select } from "./common-components/select";
-import { characters, moves } from "./consts/characters";
+import { InternalCharacters, characters } from "./consts/characters";
 
 function App() {
   const [greetMsg, setGreetMsg] = createSignal("");
-  const [player, setPlayer] = createSignal("");
-  const [opponent, setOpponent] = createSignal("");
-  const [selected, setSelected] = createSignal("");
+  const [playerId, setPlayerId] = createSignal(0);
+  const [opponentId, setOpponentId] = createSignal(0);
+  const [parseLocation, setParseLocation] = createSignal("");
 
   //TODO(Tweet): Here is where we will query arwing_core 
   async function search() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    console.log(opponent());
+    console.log(opponentId());
   }
 
   async function openFolder() {
@@ -29,11 +29,11 @@ function App() {
     });
     if (Array.isArray(selected)) {
       // TODO: search in multiple folders  
-      setSelected(selected[0]);
+      setParseLocation(selected[0]);
     } else if (selected === null) {
       //TODO: Add error here
     } else {
-      setSelected(selected);
+      setParseLocation(selected);
     }
   }
 
@@ -41,7 +41,6 @@ function App() {
   }
 
   const characterOptions = createOptions(characters.map(character => (character.name)));
-  const moveOptions = createOptions(moves.map(move => (move.name)));
 
   return (
     <div class="bg-gray-100">
@@ -53,13 +52,15 @@ function App() {
           {/* TODO(Tweet): change the onchange to filter through characters from character enums */}
           <Select
             placeholder="Player"
-            onChange={(e) => setPlayer(e)}
+            onChange={(e) =>
+              setPlayerId(parseInt(InternalCharacters[e]))
+            }
             {...characterOptions}
           />
           <Select
             placeholder="Opponent"
             onChange={(e) =>
-              setOpponent(e)
+              setOpponentId(parseInt(InternalCharacters[e]))
             }
             {...characterOptions}
           />
@@ -79,7 +80,15 @@ function App() {
             onChange={(e) =>
               setInteractionFrom(e)
             }
-            {...createOptions([player(), opponent()])}
+            {...createOptions([characters[playerId()].name, characters[opponentId()].name])}
+          />
+          <Select
+            placeholder="Move"
+            onChange={(e) =>
+              setInteractionFrom(e)
+            }
+            //TODO(Tweet): Refactor Interactions and interactionRows to have state on each row for selected character
+            {...createOptions(characters[playerId()].moves.map(move => move.moveName))}
           />
           <div class="col-span-1 relative">
             <input type="text" id="floating_outlined" class="block py-3 px-2 w-full border border-gray-200 rounded leading-normal focus:outline-none focus:ring-4 focus:border-blue-600 peer" placeholder=" " />
