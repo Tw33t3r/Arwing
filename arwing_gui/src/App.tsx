@@ -11,15 +11,22 @@ import Interactions from "./fixed-components/interaction";
 
 function App() {
   const [greetMsg, setGreetMsg] = createSignal("");
-  const [playerId, setPlayerId] = createSignal(0);
-  const [opponentId, setOpponentId] = createSignal(0);
+  //TODO(Tweet): don't just initialize to mario
+  const [player, setPlayer] = createSignal(characters[0]);
+  const [opponent, setOpponent] = createSignal(characters[0]);
   const [parseLocation, setParseLocation] = createSignal("");
+
+  let interactionData: any;
   //TODO(Tweet): Setup store of interactions https://www.solidjs.com/tutorial/stores_createstore 
 
   //TODO(Tweet): Here is where we will query arwing_core 
   async function search() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    console.log(opponentId());
+    for (let interaction of interactionData) {
+      console.log(interaction.characterId);
+      console.log(interaction.moveId);
+      console.log(interaction.withinFrames);
+    }
   }
 
   async function openFolder() {
@@ -39,7 +46,10 @@ function App() {
     }
   }
 
-  const characterOptions = createOptions(characters.map(character => (character.name)));
+  const characterOptions = createOptions(characters, { key: "name" });
+  const formatCharacters = (item: any, type: any) => {
+    return (type === "option" ? item.name : item.name);
+  };
 
   return (
     <div class="bg-gray-100">
@@ -50,15 +60,16 @@ function App() {
         <div class="w-full grid grid-cols-4">
           <Select
             placeholder="Player"
-            onChange={(e) =>
-              setPlayerId(parseInt(InternalCharacters[e]))
+            onChange={(e) => {
+              setPlayer(e)
+            }
             }
             {...characterOptions}
           />
           <Select
             placeholder="Opponent"
             onChange={(e) =>
-              setOpponentId(parseInt(InternalCharacters[e]))
+              setOpponent(e)
             }
             {...characterOptions}
           />
@@ -70,8 +81,9 @@ function App() {
           </button>
         </div>
         <Interactions
-          playerId={playerId}
-          opponentId={opponentId}
+          player={player}
+          opponent={opponent}
+          ref={interactionData}
         />
         <button
           type="button"
