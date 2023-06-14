@@ -39,6 +39,10 @@ const InteractionRow: Component<InteractionProps> = (props) => {
             type="text"
             id="floating_outlined"
             placeholder=" "
+            onChange={(e) => {
+              //TODO(Tweet): Validate user input here
+              props.setWithinFrames(parseInt(e.target.value), props.interactionId);
+            }}
             class="p-4 pl-10 w-full text-sm border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:border-blue-600 peer"
           />
           <label
@@ -49,6 +53,7 @@ const InteractionRow: Component<InteractionProps> = (props) => {
           </label>
         </div>
       </div>
+      <span> {props.interactionId} </span>
     </div>
   );
 }
