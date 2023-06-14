@@ -34,16 +34,20 @@ const InteractionRow: Component<InteractionProps> = (props) => {
         {...createOptions(from().moves, { key: "moveName" })}
       />
       <div class="col-span-1 relative">
-        <input
-          type="text"
-          id="floating_outlined"
-          class="block py-3 px-2 w-full border border-gray-200 rounded leading-normal focus:outline-none focus:ring-4 focus:border-blue-600 peer"
-          onChange={(e) => {
-            //TODO(Tweet): Validate user input here
-            props.setWithinFrames(parseInt(e.target.value), props.interactionId);
-          }}
-        />
-        <label for="floating_outlined" class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-1">Frames Until This Move</label>
+        <div class="py-1 px-2 border border-gray-200 rounded ">
+          <input
+            type="text"
+            id="floating_outlined"
+            placeholder=" "
+            class="p-4 pl-10 w-full text-sm border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:border-blue-600 peer"
+          />
+          <label
+            for="floating_outlined"
+            class="absolute text-sm text-gray-400 bg-gray-50 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-3"
+          >
+            Frames Until This Move
+          </label>
+        </div>
       </div>
     </div>
   );
