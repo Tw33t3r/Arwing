@@ -60,6 +60,7 @@ function App() {
         <div class="w-full grid grid-cols-4">
           <Select
             placeholder="Player"
+            class="ml-2"
             onChange={(e) => {
               setPlayer(e)
             }
@@ -68,17 +69,23 @@ function App() {
           />
           <Select
             placeholder="Opponent"
+            class="mr-2"
             onChange={(e) =>
               setOpponent(e)
             }
             {...characterOptions}
           />
-          <button
-            type="button"
-            class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2"
-            onClick={() => openFolder()}>
-            SLP Folder
-          </button>
+          <div class="flex">
+            <button
+              type="button"
+              class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+              onClick={() => openFolder()}>
+              SLP Folder
+            </button>
+            <div>
+              {parseLocation()}
+            </div>
+          </div>
         </div>
         <Interactions
           player={player}
@@ -87,7 +94,7 @@ function App() {
         />
         <button
           type="button"
-          class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2"
+          class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
           onClick={() => search()}>
           Search
         </button>

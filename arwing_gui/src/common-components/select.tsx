@@ -260,7 +260,7 @@ const List: Component<ListProps> = (props) => {
 
   return (
     <Show when={select.isOpen()}>
-      <div class="z-20 bg-gray-50 absolute min-w-fit shadow-lg whitespace-nowrap rounded-sm mt-1 p-2 z-1 overflow-y-auto max-h-50vh" >
+      <div class="z-20 bg-gray-50 absolute min-w-fit shadow-lg whitespace-nowrap rounded-sm mt-1 p-2 z-1 overflow-y-auto max-h-[50vh]" >
         <Show
           when={!props.loading}
           fallback={
