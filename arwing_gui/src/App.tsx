@@ -23,6 +23,9 @@ function App() {
   async function search() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     for (let interaction of interactionData) {
+      invoke('scan_for_interactions', interaction)
+        .then((message) => console.log(message))
+        .catch((error) => console.error(error));
       console.log(interaction.characterId);
       console.log(interaction.moveId);
       console.log(interaction.withinFrames);

@@ -159,6 +159,8 @@ name = "arwing_gui"
 version = "0.1.0"
 dependencies = [
  "arwing_core",
+ "glob",
+ "peppi",
  "serde",
  "serde_json",
  "tauri",
