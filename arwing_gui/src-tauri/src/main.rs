@@ -1,9 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{ffi::OsStr, fs::canonicalize, io::Error, path::PathBuf};
+use std::{ffi::OsStr, fs::canonicalize, path::PathBuf};
 
-use arwing_core::{check_players, create_json, parse_game, read_game, Interaction, ParsedGame};
+use arwing_core::{
+    check_players, create_json, interaction::Interaction, parse_game, read_game, ParsedGame,
+};
 use glob::glob;
 use peppi::model::enums::character::Internal;
 
@@ -21,7 +23,7 @@ fn scan_for_interactions(
     player: u8,
     opponent: u8,
     interactions: Vec<Interaction>,
-) -> Result<Vec<ParsedGame>, Error> {
+) -> Result<Vec<ParsedGame>, String> {
     let mut parsed_games: Vec<ParsedGame> = Vec::new();
     let player_char = Internal(player);
     let opponent_char = Internal(opponent);

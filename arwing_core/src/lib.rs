@@ -8,7 +8,7 @@ use std::{
 };
 
 use peekread::BufPeekReader;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 use peppi::model::{
     enums::{
@@ -19,17 +19,14 @@ use peppi::model::{
     game::{Frames, Game},
 };
 
-#[derive(Debug)]
-pub struct Interaction {
-    pub action: State,
-    pub from_player: Internal,
-    pub within: Option<u32>,
-}
+pub mod interaction;
 
+#[derive(Serialize, Deserialize)]
 pub struct QueryResult {
     pub result: Vec<Vec<usize>>,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct ParsedGame {
     pub query_result: QueryResult,
     pub loc: PathBuf,
@@ -106,7 +103,7 @@ pub fn read_game(infile: &Path) -> Result<Game, Box<dyn Error>> {
 
 pub fn parse_game(
     game: Game,
-    interactions: &Vec<Interaction>,
+    interactions: &Vec<interaction::Interaction>,
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
     let result: QueryResult;
@@ -121,7 +118,7 @@ pub fn parse_game(
 
 pub fn parse_frames(
     frames: Vec<Frame<2>>,
-    interactions: &Vec<Interaction>,
+    interactions: &Vec<interaction::Interaction>,
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
     let mut target_indices: Vec<usize> = Vec::new();
@@ -204,7 +201,7 @@ pub fn parse_frames(
 
 fn check_interaction(
     port: &PortData,
-    target: &Interaction,
+    target: &interaction::Interaction,
     remaining: &mut Option<u32>,
     character: Internal,
 ) -> InteractionResult {
@@ -275,7 +272,7 @@ mod tests {
         let game = read_game(path).unwrap();
         let character = Internal::FOX;
         let opponent = Internal::PIKACHU;
-        let interactions = vec![Interaction {
+        let interactions = vec![interaction::Interaction {
             action: State::Fox(Fox::BLASTER_AIR_LOOP),
             from_player: Internal::FOX,
             within: None,
@@ -309,7 +306,7 @@ mod tests {
         let game = read_game(path).unwrap();
         let character = Internal::FOX;
         let opponent = Internal::PIKACHU;
-        let interactions = vec![Interaction {
+        let interactions = vec![interaction::Interaction {
             action: State::Common(Common::ATTACK_AIR_LW),
             from_player: Internal::FOX,
             within: None,
@@ -355,12 +352,12 @@ mod tests {
         let character = Internal::FOX;
         let opponent = Internal::PIKACHU;
         let interactions = vec![
-            Interaction {
+            interaction::Interaction {
                 action: State::Common(Common::ATTACK_AIR_LW),
                 from_player: Internal::FOX,
                 within: None,
             },
-            Interaction {
+            interaction::Interaction {
                 action: State::Common(Common::DAMAGE_AIR_2),
                 from_player: Internal::PIKACHU,
                 within: Some(200),
