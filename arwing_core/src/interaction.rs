@@ -27,7 +27,7 @@ impl<'de> Deserialize<'de> for Interaction {
             }
         };
 
-        let from_player_id: u8 = match json.get("from_player").expect("from_player").as_u64() {
+        let from_player_id: u8 = match json.get("fromPlayer").expect("fromPlayer").as_u64() {
             Some(number) => match u8::try_from(number) {
                 Ok(u8_number) => u8_number,
                 Err(_) => return Err(Error::custom("From_player contained a value out of bounds")),

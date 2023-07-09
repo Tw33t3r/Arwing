@@ -10,7 +10,6 @@ import { InternalCharacters, characters } from "./consts/characters";
 import Interactions from "./fixed-components/interaction";
 
 function App() {
-  const [greetMsg, setGreetMsg] = createSignal("");
   //TODO(Tweet): don't just initialize to mario
   const [player, setPlayer] = createSignal(characters[0]);
   const [opponent, setOpponent] = createSignal(characters[0]);
@@ -22,14 +21,9 @@ function App() {
   //TODO(Tweet): Here is where we will query arwing_core 
   async function search() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    for (let interaction of interactionData) {
-      invoke('scan_for_interactions', interaction)
-        .then((message) => console.log(message))
-        .catch((error) => console.error(error));
-      console.log(interaction.characterId);
-      console.log(interaction.moveId);
-      console.log(interaction.withinFrames);
-    }
+    invoke('scan_for_interactions', { pathString: parseLocation(), player: player().internalId, opponent: opponent().internalId, interactions: interactionData })
+      .then((message) => console.log(message))
+      .catch((error) => console.error(error));
   }
 
   async function openFolder() {
@@ -102,8 +96,6 @@ function App() {
           Search
         </button>
       </div>
-
-      <p>{greetMsg()}</p>
     </div >
   );
 }

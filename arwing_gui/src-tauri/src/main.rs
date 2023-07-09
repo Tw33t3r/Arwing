@@ -11,8 +11,10 @@ use peppi::model::enums::character::Internal;
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![scan_for_interactions])
-        .invoke_handler(tauri::generate_handler![export_to_json])
+        .invoke_handler(tauri::generate_handler![
+            scan_for_interactions,
+            export_to_json
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

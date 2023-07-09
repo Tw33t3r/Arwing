@@ -12,27 +12,27 @@ type PlayerOpponentProps = {
 
 export type InteractionData = {
   interactionId: number,
-  characterId: number,
-  moveId: number,
-  withinFrames: number,
+  fromPlayer: number,
+  action: number,
+  within: number,
 }
 
 const Interactions: Component<PlayerOpponentProps> = (props) => {
   let interactionId = 0;
 
-  const [interactionData, setInteractionData] = createStore<InteractionData[]>([{ interactionId: 0, characterId: props.player().internalId, moveId: props.player().moves[0].moveId as any as number, withinFrames: 1000 }]);
+  const [interactionData, setInteractionData] = createStore<InteractionData[]>([{ interactionId: 0, fromPlayer: props.player().internalId, action: props.player().moves[0].moveId as any as number, within: 1000 }]);
 
   const setCharacterId = (characterId: number, interactionId: number) => {
-    setInteractionData(interaction => interaction.interactionId === interactionId, "characterId", characterId);
+    setInteractionData(interaction => interaction.interactionId === interactionId, "fromPlayer", characterId);
   }
   const setMoveId = (moveId: number, interactionId: number) => {
-    setInteractionData(interaction => interaction.interactionId === interactionId, "moveId", moveId);
+    setInteractionData(interaction => interaction.interactionId === interactionId, "action", moveId);
   }
   const setWithinFrames = (withinFrames: number, interactionId: number) => {
-    setInteractionData(interaction => interaction.interactionId === interactionId, "withinFrames", withinFrames);
+    setInteractionData(interaction => interaction.interactionId === interactionId, "within", withinFrames);
   }
   const newInteraction = () => {
-    setInteractionData([...interactionData, { interactionId: ++interactionId, characterId: props.player().internalId, moveId: props.player().moves[0].moveId as any as number, withinFrames: 1000 }]);
+    setInteractionData([...interactionData, { interactionId: ++interactionId, fromPlayer: props.player().internalId, action: props.player().moves[0].moveId as any as number, within: 1000 }]);
   }
   const removeInteraction = (interactionId: number) => {
     setInteractionData(interactionData.filter(data => data.interactionId !== interactionId));
