@@ -83,5 +83,6 @@ fn scan_for_interactions(
 
 #[tauri::command]
 fn export_to_json(export_location: String, parsed_games: Vec<ParsedGame>) {
+    print!("{:?}", export_location);
     create_json(parsed_games, PathBuf::from(export_location));
 }

@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import { invoke } from "@tauri-apps/api/tauri";
 import { open } from '@tauri-apps/api/dialog';
 import { appDataDir } from '@tauri-apps/api/path';
@@ -14,6 +14,7 @@ function App() {
   const [player, setPlayer] = createSignal(characters[0]);
   const [opponent, setOpponent] = createSignal(characters[0]);
   const [parseLocation, setParseLocation] = createSignal("");
+  const [discoveredInteractions, setDiscoveredInteractions] = createSignal();
 
   let interactionData: any;
   //TODO(Tweet): Setup store of interactions https://www.solidjs.com/tutorial/stores_createstore 
@@ -21,7 +22,25 @@ function App() {
   //TODO(Tweet): Here is where we will query arwing_core 
   async function search() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    invoke('scan_for_interactions', { pathString: parseLocation(), player: player().internalId, opponent: opponent().internalId, interactions: interactionData })
+    invoke('scan_for_interactions', {
+      pathString: parseLocation(),
+      player: player().internalId,
+      opponent: opponent().internalId,
+      interactions: interactionData
+    })
+      .then((message) => {
+        setDiscoveredInteractions(message);
+        console.log(message)
+      })
+      .catch((error) => console.error(error));
+  }
+
+  async function exportToJson() {
+    //TODO(Tweet): Add an 'export to' button
+    invoke('export_to_json', {
+      exportLocation: parseLocation(),
+      parsedGames: discoveredInteractions()
+    })
       .then((message) => console.log(message))
       .catch((error) => console.error(error));
   }
@@ -95,6 +114,19 @@ function App() {
           onClick={() => search()}>
           Search
         </button>
+      </div>
+      <div>
+        <Show
+          when={discoveredInteractions()}
+        >
+          {discoveredInteractions() as string}
+          <button
+            type="button"
+            class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+            onClick={() => exportToJson()}>
+            Export to Clippi
+          </button>
+        </Show>
       </div>
     </div >
   );

@@ -253,6 +253,7 @@ pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {
     let json = serde_json::to_string(&clippi);
     match json {
         Ok(json) => {
+            //TODO(Tweet): Let's not panic here
             fs::write(output_loc, json).unwrap_or_else(|_| panic!("Could not write to file"));
         }
         Err(_) => panic!("Could not serialize the gathered query data"),
