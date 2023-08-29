@@ -8,7 +8,7 @@ use std::{
 };
 
 use peekread::BufPeekReader;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use peppi::model::{
     enums::{
@@ -85,9 +85,9 @@ pub fn check_players(game: &Game, player: Internal, opponent: Internal) -> Optio
             } else {
                 return None;
             }
-            return Some(Characters { p1, p2 });
+            Some(Characters { p1, p2 })
         }
-        None => return None,
+        None => None,
     }
 }
 
@@ -103,22 +103,21 @@ pub fn read_game(infile: &Path) -> Result<Game, Box<dyn Error>> {
 
 pub fn parse_game(
     game: Game,
-    interactions: &Vec<interaction::Interaction>,
+    interactions: &[interaction::Interaction],
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
-    let result: QueryResult;
-    match game.frames {
+    let result: QueryResult = match game.frames {
         Frames::P2(frames) => {
-            result = parse_frames(frames, &interactions, players).unwrap();
+            parse_frames(frames, interactions, players).unwrap()
         }
         _ => panic!("Only 2 player games are supported at this moment."),
-    }
+    };
     Ok(result)
 }
 
 pub fn parse_frames(
     frames: Vec<Frame<2>>,
-    interactions: &Vec<interaction::Interaction>,
+    interactions: &[interaction::Interaction],
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
     let mut target_indices: Vec<usize> = Vec::new();
@@ -219,7 +218,7 @@ fn check_interaction(
     if post_frame.state == target.action {
         return InteractionResult::Target;
     }
-    return InteractionResult::NonContiguous;
+    InteractionResult::NonContiguous
 }
 
 pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {

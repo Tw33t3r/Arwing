@@ -123,22 +123,15 @@ fn main() {
             match entry {
                 Ok(path) => {
                     //TODO(Tweet): spawn a new thread for each game
-                    match read_game(path.as_path()) {
-                        Ok(game) => {
-                            let players_result = check_players(&game, player, opponent);
-                            match players_result {
-                                Some(players) => {
-                                    let parsed = parse_game(game, &interactions, players).unwrap();
-                                    parsed_games.push(ParsedGame {
-                                        query_result: parsed,
-                                        loc: canonicalize(path).unwrap(),
-                                    });
-                                }
-                                None => {}
-                            }
+                    if let Ok(game) = read_game(path.as_path()) {
+                        let players_result = check_players(&game, player, opponent);
+                        if let Some(players) = players_result {
+                            let parsed = parse_game(game, &interactions, players).unwrap();
+                            parsed_games.push(ParsedGame {
+                                query_result: parsed,
+                                loc: canonicalize(path).unwrap(),
+                            });
                         }
-                        //Ignores game if slippi finds an error
-                        Err(_) => {}
                     };
                 }
                 Err(e) => println!("{:?}", e),
