@@ -68,7 +68,7 @@ fn main() {
         )
         .get_matches();
 
-    let name: Option<&String> = matches.get_one("name");
+    let _name: Option<&String> = matches.get_one("name");
     let export_option: Option<&PathBuf> = matches.get_one("export");
 
     let player: Internal = *matches.get_one("player").unwrap();
@@ -81,7 +81,6 @@ fn main() {
     let interactions: Vec<Interaction> = matches
         .get_many("interaction")
         .unwrap()
-        .into_iter()
         .collect::<Vec<&String>>()
         .chunks(3)
         .map(|interaction| {
@@ -124,7 +123,7 @@ fn main() {
             match entry {
                 Ok(path) => {
                     //TODO(Tweet): spawn a new thread for each game
-                    let _game = match read_game(path.as_path()) {
+                    match read_game(path.as_path()) {
                         Ok(game) => {
                             let players_result = check_players(&game, player, opponent);
                             match players_result {
