@@ -107,9 +107,7 @@ pub fn parse_game(
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
     let result: QueryResult = match game.frames {
-        Frames::P2(frames) => {
-            parse_frames(frames, interactions, players).unwrap()
-        }
+        Frames::P2(frames) => parse_frames(frames, interactions, players).unwrap(),
         _ => panic!("Only 2 player games are supported at this moment."),
     };
     Ok(result)
@@ -268,8 +266,9 @@ mod tests {
 
     #[test]
     fn special_moves() {
-        let path = Path::new("test.slp");
-        let game = read_game(path).unwrap();
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("test/test.slp");
+        let game = read_game(path.as_path()).unwrap();
         let character = Internal::FOX;
         let opponent = Internal::PIKACHU;
         let interactions = vec![interaction::Interaction {
@@ -302,8 +301,9 @@ mod tests {
 
     #[test]
     fn dairs() {
-        let path = Path::new("test.slp");
-        let game = read_game(path).unwrap();
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("test/test.slp");
+        let game = read_game(path.as_path()).unwrap();
         let character = Internal::FOX;
         let opponent = Internal::PIKACHU;
         let interactions = vec![interaction::Interaction {
@@ -347,8 +347,9 @@ mod tests {
 
     #[test]
     fn dairs_that_hit() {
-        let path = Path::new("test.slp");
-        let game = read_game(path).unwrap();
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("test/test.slp");
+        let game = read_game(path.as_path()).unwrap();
         let character = Internal::FOX;
         let opponent = Internal::PIKACHU;
         let interactions = vec![
