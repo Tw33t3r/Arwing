@@ -47,7 +47,7 @@ fn scan_for_interactions(
             match entry {
                 Ok(path) => {
                     //TODO(Tweet): spawn a new thread for each game
-                    let _game = match read_game(path.as_path()) {
+                    match read_game(path.as_path()) {
                         Ok(game) => {
                             let players_result = check_players(&game, player_char, opponent_char);
                             match players_result {
@@ -78,7 +78,7 @@ fn scan_for_interactions(
             loc: canonicalize(path).unwrap(),
         });
     }
-    return Ok(parsed_games);
+    Ok(parsed_games)
 }
 
 #[tauri::command]
