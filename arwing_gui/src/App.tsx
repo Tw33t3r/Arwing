@@ -1,6 +1,6 @@
 import { createSignal, Show } from "solid-js";
 import { invoke } from "@tauri-apps/api/tauri";
-import { open } from '@tauri-apps/api/dialog';
+import { open, save } from '@tauri-apps/api/dialog';
 import { appDataDir } from '@tauri-apps/api/path';
 
 import { createOptions } from "@thisbeyond/solid-select";
@@ -36,9 +36,15 @@ function App() {
   }
 
   async function exportToJson() {
+    const filePath = await save({
+      filters: [{
+        name: 'json',
+        extensions: ['json'],
+      }]
+    });
     //TODO(Tweet): Add an 'export to' button
     invoke('export_to_json', {
-      exportLocation: parseLocation(),
+      exportLocation: filePath,
       parsedGames: discoveredInteractions()
     })
       .then((message) => console.log(message))
