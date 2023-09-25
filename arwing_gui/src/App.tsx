@@ -19,7 +19,6 @@ function App() {
   let interactionData: any;
   //TODO(Tweet): Setup store of interactions https://www.solidjs.com/tutorial/stores_createstore 
 
-  //TODO(Tweet): Here is where we will query arwing_core 
   async function search() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     invoke('scan_for_interactions', {
@@ -42,7 +41,6 @@ function App() {
         extensions: ['json'],
       }]
     });
-    //TODO(Tweet): Add an 'export to' button
     invoke('export_to_json', {
       exportLocation: filePath,
       parsedGames: discoveredInteractions()

@@ -47,16 +47,16 @@ fn scan_for_interactions(
             match entry {
                 Ok(path) => {
                     //TODO(Tweet): spawn a new thread for each game
-                     if let Ok(game) = read_game(path.as_path()) {
-                         let players_result = check_players(&game, player_char, opponent_char);
-                         if let Some(players) = players_result {
-                             let parsed = parse_game(game, &interactions, players).unwrap();
-                             parsed_games.push(ParsedGame {
-                                 query_result: parsed,
-                                 loc: canonicalize(path).unwrap(),
-                             });
-                         }
-                     };
+                    if let Ok(game) = read_game(path.as_path()) {
+                        let players_result = check_players(&game, player_char, opponent_char);
+                        if let Some(players) = players_result {
+                            let parsed = parse_game(game, &interactions, players).unwrap();
+                            parsed_games.push(ParsedGame {
+                                query_result: parsed,
+                                loc: canonicalize(path).unwrap(),
+                            });
+                        }
+                    };
                 }
                 Err(e) => println!("{:?}", e),
             }
