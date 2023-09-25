@@ -1,0 +1,12 @@
+[package]
+name = "arwing_cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+arwing_core = { path = "../arwing_core/" }
+glob = "0.3.1"
+peppi = "1.0.0-alpha.6"
+clap = { version = "4.2.0", features = ["cargo"] }
+

@@ -8,7 +8,10 @@ use std::{
 use clap::{arg, command, value_parser, Arg, ArgAction};
 use glob::glob;
 
-use arwing::{check_players, create_json, parse_game, read_game, Interaction, ParsedGame};
+use arwing_core::{
+    check_players, create_json, interaction::Interaction, parse_game, read_game, ParsedGame,
+};
+
 use peppi::model::enums::{action_state::State, character::Internal};
 
 fn parse_internal_character(env: &str) -> Result<Internal, Error> {
@@ -65,7 +68,7 @@ fn main() {
         )
         .get_matches();
 
-    let name: Option<&String> = matches.get_one("name");
+    let _name: Option<&String> = matches.get_one("name");
     let export_option: Option<&PathBuf> = matches.get_one("export");
 
     let player: Internal = *matches.get_one("player").unwrap();
@@ -78,7 +81,6 @@ fn main() {
     let interactions: Vec<Interaction> = matches
         .get_many("interaction")
         .unwrap()
-        .into_iter()
         .collect::<Vec<&String>>()
         .chunks(3)
         .map(|interaction| {
@@ -121,22 +123,15 @@ fn main() {
             match entry {
                 Ok(path) => {
                     //TODO(Tweet): spawn a new thread for each game
-                    let _game = match read_game(path.as_path()) {
-                        Ok(game) => {
-                            let players_result = check_players(&game, player, opponent);
-                            match players_result {
-                                Some(players) => {
-                                    let parsed = parse_game(game, &interactions, players).unwrap();
-                                    parsed_games.push(ParsedGame {
-                                        query_result: parsed,
-                                        loc: canonicalize(path).unwrap(),
-                                    });
-                                }
-                                None => {}
-                            }
+                    if let Ok(game) = read_game(path.as_path()) {
+                        let players_result = check_players(&game, player, opponent);
+                        if let Some(players) = players_result {
+                            let parsed = parse_game(game, &interactions, players).unwrap();
+                            parsed_games.push(ParsedGame {
+                                query_result: parsed,
+                                loc: canonicalize(path).unwrap(),
+                            });
                         }
-                        //Ignores game if slippi finds an error
-                        Err(_) => {}
                     };
                 }
                 Err(e) => println!("{:?}", e),
