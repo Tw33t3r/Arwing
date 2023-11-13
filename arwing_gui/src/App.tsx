@@ -28,8 +28,8 @@ function App() {
       interactions: interactionData
     })
       .then((message) => {
-        setDiscoveredInteractions(message);
         console.log(message)
+        setDiscoveredInteractions(message);
       })
       .catch((error) => console.error(error));
   }
@@ -67,20 +67,21 @@ function App() {
   }
 
   const characterOptions = createOptions(characters, { key: "name" });
+
   const formatCharacters = (item: any, type: any) => {
     return (type === "option" ? item.name : item.name);
   };
 
   return (
-    <div class="bg-gray-100">
-      < h1 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl" >
-        Matchup
-      </h1 >
+    <div class="bg-gray-100 min-h-screen py-14 px-14">
       <div >
+        < h1 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl" >
+          Matchup
+        </h1 >
         <div class="w-full grid grid-cols-4">
           <Select
             placeholder="Player"
-            class="ml-2"
+            class="m-2"
             onChange={(e) => {
               setPlayer(e)
             }
@@ -89,22 +90,20 @@ function App() {
           />
           <Select
             placeholder="Opponent"
-            class="mr-2"
+            class="m-2"
             onChange={(e) =>
               setOpponent(e)
             }
             {...characterOptions}
           />
-          <div class="flex">
+          <div class="flex items-center">
             <button
               type="button"
               class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
               onClick={() => openFolder()}>
               SLP Folder
             </button>
-            <div>
-              {parseLocation()}
-            </div>
+            <div class="text-lg tracking-tight text-gray-800 lg:text-lg mx-4"> {parseLocation()} </div>
           </div>
         </div>
         <Interactions
@@ -114,19 +113,19 @@ function App() {
         />
         <button
           type="button"
-          class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+          class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 rounded-lg font-bold text-md px-5 py-2.5 text-center my-6"
           onClick={() => search()}>
           Search
         </button>
       </div>
-      <div>
+      <div class="my-6">
         <Show
           when={discoveredInteractions()}
         >
-          {discoveredInteractions() as string}
+          {discoveredInteractions && <p> Found {(discoveredInteractions() as Array<any>).length} games featuring interactions </p>}
           <button
             type="button"
-            class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+            class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center my-4"
             onClick={() => exportToJson()}>
             Export to Clippi
           </button>

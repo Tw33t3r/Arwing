@@ -41,13 +41,13 @@ const Interactions: Component<PlayerOpponentProps> = (props) => {
   props.ref(interactionData);
 
   return (
-    <div>
+    <div class="mt-6">
       <h2 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl lg:text-5xl">
         Interaction
       </h2>
       <For each={interactionData}>
         {(interaction) => {
-          return <div class="flex mx-6 my-2">
+          return <div class="flex m2 my-2">
             <InteractionRow
               player={props.player}
               opponent={props.opponent}
@@ -72,7 +72,7 @@ const Interactions: Component<PlayerOpponentProps> = (props) => {
       </For >
       <button
         type="button"
-        class="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2"
+        class="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center my-2"
         onClick={() => newInteraction()}
       >
 

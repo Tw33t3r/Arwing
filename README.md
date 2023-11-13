@@ -2,6 +2,8 @@
 
 Arwing's goal is to be a querying engine for finding interactions in a set of SSBM slippi replays.
 
+![Arwing GUI](./gui.png)
+
 ## Usage
 ### Arwing-cli
  ```

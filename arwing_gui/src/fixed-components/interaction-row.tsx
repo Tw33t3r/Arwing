@@ -17,10 +17,10 @@ const [from, setFrom] = createSignal(characters[0]);
 const InteractionRow: Component<InteractionProps> = (props) => {
 
   return (
-    <div class="w-full grid grid-cols-3">
+    <div class="lg:w-2/3 grid grid-cols-3">
       <Select
         placeholder="Character"
-        class="ml-2"
+        class="px-2"
         onChange={(e) => {
           props.setCharacterId(e.internalId, props.interactionId);
           setFrom(e);
@@ -29,12 +29,13 @@ const InteractionRow: Component<InteractionProps> = (props) => {
       />
       <Select
         placeholder="Move"
+        class="px-2"
         onChange={(e) => {
           props.setMoveId(e.moveId as any as number, props.interactionId);
         }}
         {...createOptions(from().moves, { key: "moveName" })}
       />
-      <div class="col-span-1 relative">
+      <div class="col-span-1 relative px-2">
         <div class="py-1 px-2 mr-2 border border-gray-200 rounded ">
           <input
             type="text"
