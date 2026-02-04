@@ -11,12 +11,12 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@tauri-apps/api": "^1.4.0",
+    "@tauri-apps/plugin-dialog": "^2.0.0",
     "@thisbeyond/solid-select": "^0.14.0",
     "solid-js": "^1.7.11"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.4.0",
+    "@tauri-apps/cli": "^2.10.0",
     "@types/node": "^18.17.11",
     "autoprefixer": "^10.4.15",
     "postcss": "^8.4.28",

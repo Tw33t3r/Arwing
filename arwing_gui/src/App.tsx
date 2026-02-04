@@ -1,7 +1,7 @@
 import { createSignal, Show } from "solid-js";
-import { invoke } from "@tauri-apps/api/tauri";
-import { open, save } from '@tauri-apps/api/dialog';
-import { appDataDir } from '@tauri-apps/api/path';
+import { invoke } from "@tauri-apps/api/core";
+import { open, save } from '@tauri-apps/plugin-dialog';
+import { BaseDirectory } from '@tauri-apps/plugin-fs';
 
 import { createOptions } from "@thisbeyond/solid-select";
 
@@ -54,7 +54,7 @@ function App() {
     const selected = await open({
       directory: true,
       multiple: true,
-      defaultPath: await appDataDir(),
+      defaultPath: BaseDirectory.AppLocalData,
     });
     if (Array.isArray(selected)) {
       // TODO: search in multiple folders  
