@@ -5,6 +5,7 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import { createOptions } from "@thisbeyond/solid-select";
 
 import { Select } from "./common-components/select";
+import { Spinner } from "./common-components/spinner";
 import { InternalCharacters, characters } from "./consts/characters";
 import Interactions from "./fixed-components/interaction";
 
@@ -12,6 +13,7 @@ function App() {
   //TODO(Tweet): don't just initialize to mario
   const [player, setPlayer] = createSignal(characters[0]);
   const [opponent, setOpponent] = createSignal(characters[0]);
+  const [searching, setSearching] = createSignal(false);
   const [parseLocation, setParseLocation] = createSignal("");
   const [discoveredInteractions, setDiscoveredInteractions] = createSignal();
 
@@ -20,6 +22,7 @@ function App() {
 
   async function search() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+    setSearching(true);
     invoke('scan_for_interactions', {
       pathString: parseLocation(),
       player: player().internalId,
@@ -30,7 +33,8 @@ function App() {
         console.log(message)
         setDiscoveredInteractions(message);
       })
-      .catch((error) => console.error(error));
+      .catch((error) => console.error(error))
+      .finally(() => setSearching(false));
   }
 
   async function exportToJson() {
@@ -113,12 +117,17 @@ function App() {
           opponent={opponent}
           ref={interactionData}
         />
-        <button
-          type="button"
-          class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 rounded-lg font-bold text-md px-5 py-2.5 text-center my-6"
-          onClick={() => search()}>
-          Search
-        </button>
+        <Show
+          when={searching() === false}
+          fallback={<Spinner />}
+        >
+          <button
+            type="button"
+            class="text-white bg-gradient-to-r from-teal-400 via-teal-500 to-teal-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-teal-300 rounded-lg font-bold text-md px-5 py-2.5 text-center my-6"
+            onClick={() => search()}>
+            Search
+          </button>
+        </Show>
       </div>
       <div class="my-6">
         <Show

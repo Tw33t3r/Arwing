@@ -28,7 +28,7 @@ fn main() {
         .expect("error while running tauri application");
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 fn scan_for_interactions(
     path_string: String,
     player: u8,
