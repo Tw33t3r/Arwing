@@ -1,8 +1,7 @@
 import { createSignal, Show } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
+import { appDataDir } from "@tauri-apps/api/path";
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { BaseDirectory } from '@tauri-apps/plugin-fs';
-
 import { createOptions } from "@thisbeyond/solid-select";
 
 import { Select } from "./common-components/select";
@@ -50,11 +49,13 @@ function App() {
   }
 
   async function openFolder() {
+    const path = await appDataDir();
+
     // Open a selection dialog for directories
     const selected = await open({
       directory: true,
       multiple: true,
-      defaultPath: BaseDirectory.AppLocalData,
+      defaultPath: path,
     });
 
     if (Array.isArray(selected)) {

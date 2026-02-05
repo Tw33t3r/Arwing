@@ -26,6 +26,7 @@
         gdk-pixbuf
         glib
         gtk3
+        gsettings-desktop-schemas
         harfbuzz
         librsvg
         libsoup_3
@@ -35,7 +36,14 @@
 
       native_build_inputs = [ pkgs.pkg-config ];
       env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-    };
 
+
+      shellHook = ''
+        export XDG_DATA_DIRS=\
+      ${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:\
+      ${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:\
+      $XDG_DATA_DIRS
+      '';
+    };
   };
 }
