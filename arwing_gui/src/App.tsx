@@ -56,6 +56,7 @@ function App() {
       multiple: true,
       defaultPath: BaseDirectory.AppLocalData,
     });
+
     if (Array.isArray(selected)) {
       // TODO: search in multiple folders  
       setParseLocation(selected[0]);

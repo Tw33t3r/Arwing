@@ -10,6 +10,13 @@ use glob::glob;
 use peppi::model::enums::character::Internal;
 
 fn main() {
+    //TEMP https://github.com/tauri-apps/tauri/issues/10702
+    if std::env::var("WAYLAND_DISPLAY").is_ok() {
+        unsafe {
+            std::env::set_var("__NV_DISABLE_EXPLICIT_SYNC", "1");
+        }
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
