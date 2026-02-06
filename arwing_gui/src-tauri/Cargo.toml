@@ -12,7 +12,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 arwing_core = { path = "../../arwing_core/" }
-peppi = "1.0.0-alpha.6"
+peppi = "2.1.2"
 glob = "0.3.1"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }

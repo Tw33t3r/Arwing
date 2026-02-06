@@ -5,17 +5,17 @@ use std::{
     path::PathBuf,
 };
 
-use clap::{arg, command, value_parser, Arg, ArgAction};
+use clap::{Arg, ArgAction, arg, command, value_parser};
 use glob::glob;
 
 use arwing_core::{
-    check_players, create_json, interaction::Interaction, parse_game, read_game, ParsedGame,
+    ParsedGame, check_players, create_json, interaction::Interaction, parse_game, read_game,
 };
 
-use peppi::model::enums::{action_state::State, character::Internal};
+use ssbm_data::{action_state::Common, character::Internal};
 
 fn parse_internal_character(env: &str) -> Result<Internal, Error> {
-    match Internal::try_from(env) {
+    match Internal::try_from(env as u8) {
         Ok(character) => Ok(character),
         Err(_) => Err(Error::new(ErrorKind::Other, "Character does not exist")),
     }

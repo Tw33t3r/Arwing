@@ -3,21 +3,17 @@
 // It seems like allowing for specific lines is broken in this case
 use std::{
     error::Error,
-    fs,
+    fs, io,
     path::{Path, PathBuf},
 };
 
-use peekread::BufPeekReader;
 use serde::{Deserialize, Serialize};
 
-use peppi::model::{
-    enums::{
-        action_state::{Common, State},
-        character::Internal,
-    },
-    frame::{Frame, PortData},
-    game::{Frames, Game},
-};
+use peppi::frame::immutable::{Frame, PortData};
+use peppi::game::immutable::Game;
+use peppi::io::slippi::read;
+
+use ssbm_data::{action_state::Common, character::Internal};
 
 pub mod interaction;
 
@@ -57,47 +53,30 @@ enum InteractionResult {
 }
 
 pub fn check_players(game: &Game, player: Internal, opponent: Internal) -> Option<Characters> {
-    match &game.metadata.players {
-        Some(players) => {
-            if players.len() != 2 {
-                return None;
-            }
-            let p1;
-            let p2;
-            let char1_map = &players[0].characters.as_ref()?;
-            let char2_map = &players[1].characters.as_ref()?;
-            // This is ugly, but it saves us from iterating over keys
-            // Might break on zelda
-            if char1_map.contains_key(&player) {
-                p1 = player;
-                if char2_map.contains_key(&opponent) {
-                    p2 = opponent;
-                } else {
-                    return None;
-                };
-            } else if char1_map.contains_key(&opponent) {
-                p1 = opponent;
-                if char2_map.contains_key(&player) {
-                    p2 = player;
-                } else {
-                    return None;
-                };
-            } else {
-                return None;
-            }
-            Some(Characters { p1, p2 })
-        }
-        None => None,
+    let players = &game.start.players;
+    if players.len() != 2 {
+        return None;
     }
+    let p1: Internal;
+    let p2: Internal;
+    if players[0].character == player as u8 && players[1].character == opponent as u8 {
+        p1 = player;
+        p2 = opponent;
+    } else if players[1].character == player as u8 && players[0].character == opponent as u8 {
+        p1 = opponent;
+        p2 = player;
+    } else {
+        return None;
+    }
+    Some(Characters { p1, p2 })
 }
 
 pub fn read_game(infile: &Path) -> Result<Game, Box<dyn Error>> {
-    let mut buf = BufPeekReader::new(
+    let mut buf = io::BufReader::new(
         fs::File::open(infile)
             .map_err(|e| format!("couldn't open `{}`: {}", infile.display(), e))?,
     );
-    buf.set_min_read_size(8192);
-    let game = peppi::game(&mut buf, None, None)?;
+    let game = read(&mut buf, None)?;
     Ok(game)
 }
 
@@ -106,15 +85,20 @@ pub fn parse_game(
     interactions: &[interaction::Interaction],
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
-    let result: QueryResult = match game.frames {
-        Frames::P2(frames) => parse_frames(frames, interactions, players).unwrap(),
-        _ => panic!("Only 2 player games are supported at this moment."),
-    };
+    if game.frames.ports.len() != 2 {
+        panic!("Only 2 player games are supported at this moment.");
+    }
+    let result: QueryResult = parse_frames(game.frames, interactions, players).unwrap();
     Ok(result)
 }
 
+// TODO(Tweet) Frame is in struct-of-arrays format. Deeply nested values each have their own array
+// ranging from beginning to end of frame.id<i32>.
+// Need to loop from beginning to end, checking interactions at their deeply nested indices. Ports are still split by
+// Vec<PortData>
+//
 pub fn parse_frames(
-    frames: Vec<Frame<2>>,
+    frames: Frame,
     interactions: &[interaction::Interaction],
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
@@ -122,10 +106,7 @@ pub fn parse_frames(
     let mut result = Vec::new();
 
     //Some state that doesn't exist in non-crazy-hand games
-    let mut previous_frame = [
-        State::Common(Common::CAPTURE_CRAZY_HAND),
-        State::Common(Common::CAPTURE_CRAZY_HAND),
-    ];
+    let mut previous_frame = [Common::CaptureCrazyHand, Common::CaptureCrazyHand];
 
     let mut interaction_iter = interactions.iter();
     let mut target_interaction = match interaction_iter.next() {
@@ -174,11 +155,11 @@ pub fn parse_frames(
                             }
                             None => {
                                 interaction_iter = interactions.iter();
-                                let reset_interaction = match interaction_iter.next(){
+                                let reset_interaction = match interaction_iter.next() {
                                     Some(next_interaction) => next_interaction,
                                     None => panic!(
                                         "When resetting internal interactions no interactions were found"
-                                        ),
+                                    ),
                                 };
                                 target_indices.push(index);
                                 result.push(target_indices);
@@ -197,7 +178,7 @@ pub fn parse_frames(
 }
 
 fn check_interaction(
-    port: &PortData,
+    port: &Port,
     target: &interaction::Interaction,
     remaining: &mut Option<u32>,
     character: Internal,
@@ -260,20 +241,22 @@ pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {
 //TODO If it's possible, try avoiding reading all of the game into memory at a time
 #[cfg(test)]
 mod tests {
-    use peppi::model::enums::action_state::{Common, Fox};
-
     use super::*;
+    use ssbm_data::{
+        action_state::{Common, Fox},
+        character::Internal,
+    };
 
     #[test]
     fn special_moves() {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("test/test.slp");
         let game = read_game(path.as_path()).unwrap();
-        let character = Internal::FOX;
-        let opponent = Internal::PIKACHU;
+        let character = Internal::Fox;
+        let opponent = Internal::Pikachu;
         let interactions = vec![interaction::Interaction {
-            action: State::Fox(Fox::BLASTER_AIR_LOOP),
-            from_player: Internal::FOX,
+            action: Fox::BlasterAirLoop as u16,
+            from_player: Internal::Fox,
             within: None,
         }];
         let players = check_players(&game, character, opponent).unwrap();
@@ -304,11 +287,11 @@ mod tests {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("test/test.slp");
         let game = read_game(path.as_path()).unwrap();
-        let character = Internal::FOX;
-        let opponent = Internal::PIKACHU;
+        let character = Internal::Fox;
+        let opponent = Internal::Pikachu;
         let interactions = vec![interaction::Interaction {
-            action: State::Common(Common::ATTACK_AIR_LW),
-            from_player: Internal::FOX,
+            action: Common::AttackAirLw as u16,
+            from_player: Internal::Fox,
             within: None,
         }];
         let players = check_players(&game, character, opponent).unwrap();
@@ -350,17 +333,17 @@ mod tests {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("test/test.slp");
         let game = read_game(path.as_path()).unwrap();
-        let character = Internal::FOX;
-        let opponent = Internal::PIKACHU;
+        let character = Internal::Fox;
+        let opponent = Internal::Pikachu;
         let interactions = vec![
             interaction::Interaction {
-                action: State::Common(Common::ATTACK_AIR_LW),
-                from_player: Internal::FOX,
+                action: Common::AttackAirLw as u16,
+                from_player: Internal::Fox,
                 within: None,
             },
             interaction::Interaction {
-                action: State::Common(Common::DAMAGE_AIR_2),
-                from_player: Internal::PIKACHU,
+                action: Common::DamageAir2 as u16,
+                from_player: Internal::Pikachu,
                 within: Some(200),
             },
         ];
