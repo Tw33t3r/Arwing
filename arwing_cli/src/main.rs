@@ -9,14 +9,14 @@ use clap::{Arg, ArgAction, arg, command, value_parser};
 use glob::glob;
 
 use arwing_core::{
-    ParsedGame, characters::internal_character_from_str, check_players, create_json,
+    ParsedGame, characters::character_from_str, check_players, create_json,
     interaction::Interaction, parse_game, read_game,
 };
 
 use ssbm_data::character::External;
 
 fn parse_internal_character(env: &str) -> Result<External, Error> {
-    match internal_character_from_str(env) {
+    match character_from_str(env) {
         Some(character) => Ok(character),
         None => Err(Error::new(ErrorKind::Other, "Character does not exist")),
     }
@@ -85,7 +85,7 @@ fn main() {
         .collect::<Vec<&String>>()
         .chunks(3)
         .map(|interaction| {
-            let from_player_result = internal_character_from_str(&interaction[0][..]);
+            let from_player_result = character_from_str(&interaction[0][..]);
             let from_player = match from_player_result {
                 Some(from_player) => from_player,
                 None => {

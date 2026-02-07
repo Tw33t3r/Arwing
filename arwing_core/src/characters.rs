@@ -1,7 +1,7 @@
 use ssbm_data::character::External;
 use std::collections::HashMap;
 
-pub fn internal_character_from_str(s: &str) -> Option<External> {
+pub fn character_from_str(s: &str) -> Option<External> {
     let map: HashMap<&str, External> = HashMap::from([
         ("mario", External::Mario),
         ("fox", External::Fox),
