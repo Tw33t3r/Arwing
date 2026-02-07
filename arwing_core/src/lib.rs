@@ -13,8 +13,9 @@ use peppi::frame::immutable::Frame;
 use peppi::game::immutable::Game;
 use peppi::io::slippi::read;
 
-use ssbm_data::{action_state::Common, character::Internal};
+use ssbm_data::{action_state::Common, character::External};
 
+pub mod characters;
 pub mod interaction;
 
 #[derive(Serialize, Deserialize)]
@@ -29,8 +30,8 @@ pub struct ParsedGame {
 }
 
 pub struct Characters {
-    pub p1: Internal,
-    pub p2: Internal,
+    pub p1: External,
+    pub p2: External,
 }
 
 #[derive(Serialize)]
@@ -54,13 +55,13 @@ enum InteractionResult {
 
 //TODO(Tweet): We can change the return of this from character to port numbers, then we don't need
 //to worry about wrong character errors later on
-pub fn check_players(game: &Game, player: Internal, opponent: Internal) -> Option<Characters> {
+pub fn check_players(game: &Game, player: External, opponent: External) -> Option<Characters> {
     let players = &game.start.players;
     if players.len() != 2 {
         return None;
     }
-    let p1: Internal;
-    let p2: Internal;
+    let p1: External;
+    let p2: External;
     if players[0].character == player as u8 && players[1].character == opponent as u8 {
         p1 = player;
         p2 = opponent;
@@ -191,7 +192,7 @@ fn check_interaction(
     frame_state: u16,
     target: &interaction::Interaction,
     remaining: &mut Option<u32>,
-    character: Internal,
+    character: External,
 ) -> InteractionResult {
     if let Some(amount) = remaining {
         if amount == &0 {
@@ -253,7 +254,7 @@ mod tests {
     use super::*;
     use ssbm_data::{
         action_state::{Common, Fox},
-        character::Internal,
+        character::External,
     };
 
     #[test]
@@ -261,11 +262,11 @@ mod tests {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("test/test.slp");
         let game = read_game(path.as_path()).unwrap();
-        let character = Internal::Fox;
-        let opponent = Internal::Pikachu;
+        let character = External::Fox;
+        let opponent = External::Pikachu;
         let interactions = vec![interaction::Interaction {
             action: Fox::BlasterAirLoop as u16,
-            from_player: Internal::Fox,
+            from_player: External::Fox,
             within: None,
         }];
         let players = check_players(&game, character, opponent).unwrap();
@@ -296,11 +297,11 @@ mod tests {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("test/test.slp");
         let game = read_game(path.as_path()).unwrap();
-        let character = Internal::Fox;
-        let opponent = Internal::Pikachu;
+        let character = External::Fox;
+        let opponent = External::Pikachu;
         let interactions = vec![interaction::Interaction {
             action: Common::AttackAirLw as u16,
-            from_player: Internal::Fox,
+            from_player: External::Fox,
             within: None,
         }];
         let players = check_players(&game, character, opponent).unwrap();
@@ -342,17 +343,17 @@ mod tests {
         let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         path.push("test/test.slp");
         let game = read_game(path.as_path()).unwrap();
-        let character = Internal::Fox;
-        let opponent = Internal::Pikachu;
+        let character = External::Fox;
+        let opponent = External::Pikachu;
         let interactions = vec![
             interaction::Interaction {
                 action: Common::AttackAirLw as u16,
-                from_player: Internal::Fox,
+                from_player: External::Fox,
                 within: None,
             },
             interaction::Interaction {
                 action: Common::DamageAir2 as u16,
-                from_player: Internal::Pikachu,
+                from_player: External::Pikachu,
                 within: Some(200),
             },
         ];

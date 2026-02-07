@@ -1,11 +1,11 @@
 use serde::de::{Deserialize, Deserializer, Error};
 
-use ssbm_data::character::Internal;
+use ssbm_data::character::External;
 
 #[derive(Debug)]
 pub struct Interaction {
     pub action: u16,
-    pub from_player: Internal,
+    pub from_player: External,
     pub within: Option<u32>,
 }
 
@@ -23,7 +23,7 @@ impl<'de> Deserialize<'de> for Interaction {
             None => {
                 return Err(Error::custom(
                     "state_id deserializer recieved a non-numeric type",
-                ))
+                ));
             }
         };
 
@@ -31,12 +31,12 @@ impl<'de> Deserialize<'de> for Interaction {
             .get("fromPlayer")
             .ok_or_else(|| Error::custom("From_player not present in json blob"))?
             .as_u64()
-            .ok_or_else(|| Error::custom( "From_player deserializer recieved a non-numeric type"))?
+            .ok_or_else(|| Error::custom("From_player deserializer recieved a non-numeric type"))?
             .try_into()
-            .map_err(|_| Error::custom( "From_player contained a value out of bounds"))?;
+            .map_err(|_| Error::custom("From_player contained a value out of bounds"))?;
 
-        let character = Internal::try_from(character_id)
-            .map_err(|_| Error::custom( "From_player contained a value out of bounds"))?;
+        let character = External::try_from(character_id)
+            .map_err(|_| Error::custom("From_player contained a value out of bounds"))?;
 
         let within = match json.get("within").expect("within").as_u64() {
             Some(number) => match u32::try_from(number) {
@@ -46,7 +46,7 @@ impl<'de> Deserialize<'de> for Interaction {
             None => {
                 return Err(Error::custom(
                     "Within deserializer recieved a non-numeric type",
-                ))
+                ));
             }
         };
 
