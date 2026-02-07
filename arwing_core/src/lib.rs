@@ -9,7 +9,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use peppi::frame::immutable::{Frame, PortData};
+use peppi::frame::immutable::Frame;
 use peppi::game::immutable::Game;
 use peppi::io::slippi::read;
 
@@ -52,6 +52,8 @@ enum InteractionResult {
     Target,
 }
 
+//TODO(Tweet): We can change the return of this from character to port numbers, then we don't need
+//to worry about wrong character errors later on
 pub fn check_players(game: &Game, player: Internal, opponent: Internal) -> Option<Characters> {
     let players = &game.start.players;
     if players.len() != 2 {
@@ -96,7 +98,6 @@ pub fn parse_game(
 // ranging from beginning to end of frame.id<i32>.
 // Need to loop from beginning to end, checking interactions at their deeply nested indices. Ports are still split by
 // Vec<PortData>
-//
 pub fn parse_frames(
     frames: Frame,
     interactions: &[interaction::Interaction],
@@ -106,7 +107,10 @@ pub fn parse_frames(
     let mut result = Vec::new();
 
     //Some state that doesn't exist in non-crazy-hand games
-    let mut previous_frame = [Common::CaptureCrazyHand, Common::CaptureCrazyHand];
+    let mut previous_frame = [
+        Common::CaptureCrazyHand as u16,
+        Common::CaptureCrazyHand as u16,
+    ];
 
     let mut interaction_iter = interactions.iter();
     let mut target_interaction = match interaction_iter.next() {
@@ -116,28 +120,32 @@ pub fn parse_frames(
 
     let mut remaining = target_interaction.within;
 
-    let iter = frames.iter();
-
-    for (index, frame) in iter.enumerate() {
+    for index in 0..frames.id.len() {
         //With this the way it is we will end up checking a lot of unnecessary frames in non-mirror
         //matchups.
         //TODO way too many indentations
-        for (port_index, port) in frame.ports.iter().enumerate() {
+        for (port_index, port) in frames.ports.iter().enumerate() {
             let port_character = match port_index {
                 0 => players.p1,
                 1 => players.p2,
                 _ => panic!("Attempting to parse a game with more than 2 players"),
             };
-            match check_interaction(port, target_interaction, &mut remaining, port_character) {
+
+            let post_frame = port.leader.post.state.get(index).unwrap();
+
+            match check_interaction(
+                post_frame,
+                target_interaction,
+                &mut remaining,
+                port_character,
+            ) {
                 InteractionResult::WrongCharacter => (),
                 InteractionResult::TimeOut => {
                     //reset
                     interaction_iter = interactions.iter();
                     let reset_interaction = match interaction_iter.next() {
                         Some(next_interaction) => next_interaction,
-                        None => panic!(
-                            "When resetting internal interactions no interactions were found"
-                        ),
+                        None => panic!("When resetting internal none were found"),
                     };
                     target_indices = Vec::new();
                     remaining = reset_interaction.within;
@@ -145,7 +153,9 @@ pub fn parse_frames(
                 }
                 InteractionResult::NonContiguous => (),
                 InteractionResult::Target => {
-                    if previous_frame[port_index] != port.leader.post.state {
+                    if previous_frame[port_index] as u16
+                        != port.leader.post.state.get(index).unwrap()
+                    {
                         //TODO Excessively moving memory around in this block
                         target_interaction = match interaction_iter.next() {
                             Some(interaction) => {
@@ -158,7 +168,7 @@ pub fn parse_frames(
                                 let reset_interaction = match interaction_iter.next() {
                                     Some(next_interaction) => next_interaction,
                                     None => panic!(
-                                        "When resetting internal interactions no interactions were found"
+                                        "When resetting internal interactions none were found"
                                     ),
                                 };
                                 target_indices.push(index);
@@ -171,14 +181,14 @@ pub fn parse_frames(
                     }
                 }
             };
-            previous_frame[port_index] = port.leader.post.state;
+            previous_frame[port_index] = port.leader.post.state.get(index).unwrap();
         }
     }
     Ok(QueryResult { result })
 }
 
 fn check_interaction(
-    port: &Port,
+    frame_state: u16,
     target: &interaction::Interaction,
     remaining: &mut Option<u32>,
     character: Internal,
@@ -190,11 +200,10 @@ fn check_interaction(
         *remaining = Some(*amount - 1);
     }
 
-    let post_frame = port.leader.post;
     if character != target.from_player {
         return InteractionResult::WrongCharacter;
     }
-    if post_frame.state == target.action {
+    if frame_state == target.action {
         return InteractionResult::Target;
     }
     InteractionResult::NonContiguous
