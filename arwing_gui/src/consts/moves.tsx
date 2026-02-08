@@ -7,72 +7,60 @@ export type Move = {
 export default function characterMoves(character: string) {
   const genericMoveList = Object.keys(generic_moves).filter(key => (typeof generic_moves[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: generic_moves[key as any as number] }));
   switch (character) {
-    case 'MARIO':
+    case 'Mario':
       return genericMoveList.concat(Object.keys(Mario).filter(key => (typeof Mario[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Mario[key as any as number] })));
-    case 'FOX':
+    case 'Fox':
       return genericMoveList.concat(Object.keys(Fox).filter(key => (typeof Fox[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Fox[key as any as number] })));
-    case 'CAPTAIN_FALCON':
+    case 'CaptainFalcon':
       return genericMoveList.concat(Object.keys(CaptainFalcon).filter(key => (typeof CaptainFalcon[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: CaptainFalcon[key as any as number] })));
-    case 'DONKEY_KONG':
+    case 'DonkeyKong':
       return genericMoveList.concat(Object.keys(DonkeyKong).filter(key => (typeof DonkeyKong[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: DonkeyKong[key as any as number] })));
-    case 'KIRBY':
+    case 'Kirby':
       return genericMoveList.concat(Object.keys(Kirby).filter(key => (typeof Kirby[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Kirby[key as any as number] })));
-    case 'BOWSER':
+    case 'Bowser':
       return genericMoveList.concat(Object.keys(Bowser).filter(key => (typeof Bowser[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Bowser[key as any as number] })));
-    case 'LINK':
+    case 'Link':
       return genericMoveList.concat(Object.keys(Link).filter(key => (typeof Link[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Link[key as any as number] })));
-    case 'SHEIK':
+    case 'Sheik':
       return genericMoveList.concat(Object.keys(Sheik).filter(key => (typeof Sheik[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Sheik[key as any as number] })));
-    case 'NESS':
+    case 'Ness':
       return genericMoveList.concat(Object.keys(Ness).filter(key => (typeof Ness[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Ness[key as any as number] })));
-    case 'PEACH':
+    case 'Peach':
       return genericMoveList.concat(Object.keys(Peach).filter(key => (typeof Peach[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Peach[key as any as number] })));
-    case 'POPO':
+    case 'Popo':
       return genericMoveList.concat(Object.keys(Popo).filter(key => (typeof Popo[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Popo[key as any as number] })));
-    case 'NANA':
+    case 'Nana':
       return genericMoveList.concat(Object.keys(Nana).filter(key => (typeof Nana[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Nana[key as any as number] })));
-    case 'PIKACHU':
+    case 'Pikachu':
       return genericMoveList.concat(Object.keys(Pikachu).filter(key => (typeof Pikachu[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Pikachu[key as any as number] })));
-    case 'SAMUS':
+    case 'Samus':
       return genericMoveList.concat(Object.keys(Samus).filter(key => (typeof Samus[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Samus[key as any as number] })));
-    case 'YOSHI':
+    case 'Yoshi':
       return genericMoveList.concat(Object.keys(Yoshi).filter(key => (typeof Yoshi[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Yoshi[key as any as number] })));
-    case 'JIGGLYPUFF':
+    case 'Jigglypuff':
       return genericMoveList.concat(Object.keys(Jigglypuff).filter(key => (typeof Jigglypuff[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Jigglypuff[key as any as number] })));
-    case 'MEWTWO':
+    case 'Mewtwo':
       return genericMoveList.concat(Object.keys(Mewtwo).filter(key => (typeof Mewtwo[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Mewtwo[key as any as number] })));
-    case 'LUIGI':
+    case 'Luigi':
       return genericMoveList.concat(Object.keys(Luigi).filter(key => (typeof Luigi[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Luigi[key as any as number] })));
-    case 'MARTH':
+    case 'Marth':
       return genericMoveList.concat(Object.keys(Marth).filter(key => (typeof Marth[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Marth[key as any as number] })));
-    case 'ZELDA':
+    case 'Zelda':
       return genericMoveList.concat(Object.keys(Zelda).filter(key => (typeof Zelda[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Zelda[key as any as number] })));
-    case 'YOUNG_LINK':
+    case 'YoungLink':
       return genericMoveList.concat(Object.keys(YoungLink).filter(key => (typeof YoungLink[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: YoungLink[key as any as number] })));
-    case 'DR_MARIO':
+    case 'DrMario':
       return genericMoveList.concat(Object.keys(DrMario).filter(key => (typeof DrMario[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: DrMario[key as any as number] })));
-    case 'FALCO':
+    case 'Falco':
       return genericMoveList.concat(Object.keys(Falco).filter(key => (typeof Falco[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Falco[key as any as number] })));
-    case 'PICHU':
+    case 'Pichu':
       return genericMoveList.concat(Object.keys(Pichu).filter(key => (typeof Pichu[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Pichu[key as any as number] })));
-    case 'GAME_AND_WATCH':
+    case 'GameAndWatch':
       return genericMoveList.concat(Object.keys(GameAndWatch).filter(key => (typeof GameAndWatch[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: GameAndWatch[key as any as number] })));
-    case 'GANONDORF':
+    case 'Ganondorf':
       return genericMoveList.concat(Object.keys(Ganondorf).filter(key => (typeof Ganondorf[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Ganondorf[key as any as number] })));
-    case 'ROY':
+    case 'Roy':
       return genericMoveList.concat(Object.keys(Roy).filter(key => (typeof Roy[key as any as number] === 'number')).map(key => ({ moveName: key, moveId: Roy[key as any as number] })));
-    case 'MASTER_HAND':
-      return genericMoveList;
-    case 'CRAZY_HAND':
-      return genericMoveList;
-    case 'WIRE_FRAME_MALE':
-      return genericMoveList;
-    case 'WIRE_FRAME_FEMALE':
-      return genericMoveList;
-    case 'GIGA_BOWSER':
-      return genericMoveList;
-    case 'SANDBAG':
-      return genericMoveList;
   }
   return [];
 }

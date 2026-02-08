@@ -4,10 +4,10 @@
 use std::{ffi::OsStr, fs::canonicalize, path::PathBuf};
 
 use arwing_core::{
-    check_players, create_json, interaction::Interaction, parse_game, read_game, ParsedGame,
+    ParsedGame, check_players, create_json, interaction::Interaction, parse_game, read_game,
 };
 use glob::glob;
-use peppi::model::enums::character::Internal;
+use ssbm_data::character::External;
 
 fn main() {
     //TEMP https://github.com/tauri-apps/tauri/issues/10702
@@ -36,8 +36,8 @@ fn scan_for_interactions(
     interactions: Vec<Interaction>,
 ) -> Result<Vec<ParsedGame>, String> {
     let mut parsed_games: Vec<ParsedGame> = Vec::new();
-    let player_char = Internal(player);
-    let opponent_char = Internal(opponent);
+    let player_char = External::try_from(player).unwrap();
+    let opponent_char = External::try_from(opponent).unwrap();
 
     let path = PathBuf::from(&path_string);
     if path.is_dir() {
