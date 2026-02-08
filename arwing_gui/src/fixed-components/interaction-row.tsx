@@ -2,7 +2,7 @@ import { createOptions } from "@thisbeyond/solid-select";
 import { Component, Accessor, createSignal } from "solid-js";
 
 import { Select } from "../common-components/select";
-import { InternalCharacters, characters, Character } from "../consts/characters";
+import { characters, Character } from "../consts/characters";
 
 type InteractionProps = {
   player: Accessor<Character>,
