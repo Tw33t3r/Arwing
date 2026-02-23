@@ -6,7 +6,7 @@ import { createOptions } from "@thisbeyond/solid-select";
 
 import { Select } from "./common-components/select";
 import { Spinner } from "./common-components/spinner";
-import { InternalCharacters, characters } from "./consts/characters";
+import { ExternalCharacters, characters } from "./consts/characters";
 import Interactions from "./fixed-components/interaction";
 
 function App() {

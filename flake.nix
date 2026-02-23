@@ -32,6 +32,9 @@
         libsoup_3
         webkitgtk_4_1
         openssl
+
+#Internally required
+        perf
       ];
 
       native_build_inputs = [ pkgs.pkg-config ];

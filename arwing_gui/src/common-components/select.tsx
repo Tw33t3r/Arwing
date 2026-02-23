@@ -65,7 +65,7 @@ const Select: Component<SelectProps> = (props) => {
   const [selectProps, local] = splitProps(
     mergeProps(
       {
-        format: ((data, type) => data) as CommonProps["format"],
+        format: ((data, _type) => data) as CommonProps["format"],
         placeholder: "Select...",
         readonly: typeof props.options !== "function",
         loading: false,
@@ -192,8 +192,6 @@ const SingleValue: ParentComponent<{}> = (props) => {
 };
 
 const MultiValue: ParentComponent<{ onRemove: () => void }> = (props) => {
-  const select = useSelect();
-
   return (
     <div class="flex items-center rounded px-[4px] bg-gray-100 text-[85%] leading-[inherit]">
       {props.children}

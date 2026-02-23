@@ -5,19 +5,20 @@ use std::{
     path::PathBuf,
 };
 
-use clap::{arg, command, value_parser, Arg, ArgAction};
+use clap::{Arg, ArgAction, arg, command, value_parser};
 use glob::glob;
 
 use arwing_core::{
-    check_players, create_json, interaction::Interaction, parse_game, read_game, ParsedGame,
+    ParsedGame, characters::character_from_str, check_players, create_json,
+    interaction::Interaction, parse_game, read_game,
 };
 
-use peppi::model::enums::{action_state::State, character::Internal};
+use ssbm_data::character::External;
 
-fn parse_internal_character(env: &str) -> Result<Internal, Error> {
-    match Internal::try_from(env) {
-        Ok(character) => Ok(character),
-        Err(_) => Err(Error::new(ErrorKind::Other, "Character does not exist")),
+fn parse_internal_character(env: &str) -> Result<External, Error> {
+    match character_from_str(env) {
+        Some(character) => Ok(character),
+        None => Err(Error::new(ErrorKind::Other, "Character does not exist")),
     }
 }
 
@@ -71,8 +72,8 @@ fn main() {
     let _name: Option<&String> = matches.get_one("name");
     let export_option: Option<&PathBuf> = matches.get_one("export");
 
-    let player: Internal = *matches.get_one("player").unwrap();
-    let opponent: Internal = *matches.get_one("opponent").unwrap();
+    let player: External = *matches.get_one("player").unwrap();
+    let opponent: External = *matches.get_one("opponent").unwrap();
     let path: PathBuf = matches
         .get_one::<PathBuf>("directory")
         .unwrap()
@@ -84,16 +85,16 @@ fn main() {
         .collect::<Vec<&String>>()
         .chunks(3)
         .map(|interaction| {
-            let from_player_result = Internal::try_from(&interaction[0][..]);
+            let from_player_result = character_from_str(&interaction[0][..]);
             let from_player = match from_player_result {
-                Ok(Internal(from_player)) => from_player,
-                Err(error) => {
-                    panic!("Couldn't match the from_player in interactions {:?}", error)
+                Some(from_player) => from_player,
+                None => {
+                    panic!("Couldn't match the from_player in interactions")
                 }
             };
             Interaction {
-                action: State::from(interaction[1].parse().unwrap(), Internal(from_player)),
-                from_player: Internal(from_player),
+                action: interaction[1].parse().unwrap(),
+                from_player: from_player,
                 //TODO(Tweet): Figure out how to fix the 1st input low number of within frames bug.
                 within: match interaction[2].as_str() {
                     "None" => None,
