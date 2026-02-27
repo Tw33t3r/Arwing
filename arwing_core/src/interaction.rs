@@ -6,6 +6,7 @@ use ssbm_data::character::External;
 pub struct Interaction {
     pub action: u16,
     pub from_player: External,
+    pub failed_l_cancel: Option<bool>,
     pub within: Option<u32>,
 }
 
@@ -38,6 +39,8 @@ impl<'de> Deserialize<'de> for Interaction {
         let character = External::try_from(character_id)
             .map_err(|_| Error::custom("From_player contained a value out of bounds"))?;
 
+        let failed_l_cancel = json.get("failedLCancel").expect("failedLCancel").as_bool();
+
         let within = match json.get("within").expect("within").as_u64() {
             Some(number) => match u32::try_from(number) {
                 Ok(u32_number) => u32_number,
@@ -52,6 +55,7 @@ impl<'de> Deserialize<'de> for Interaction {
 
         Ok(Interaction {
             action: state_id,
+            failed_l_cancel,
             from_player: character,
             within: Some(within),
         })

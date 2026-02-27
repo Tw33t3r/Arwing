@@ -50,6 +50,7 @@ enum InteractionResult {
     TimeOut,
     WrongCharacter,
     NonContiguous,
+    GameStateMismatch,
     Target,
 }
 
@@ -141,6 +142,19 @@ pub fn parse_frames(
                 port_character,
             ) {
                 InteractionResult::WrongCharacter => (),
+                InteractionResult::GameStateMismatch => {
+                    //reset
+                    interaction_iter = interactions.iter();
+                    let reset_interaction = match interaction_iter.next() {
+                        Some(next_interaction) => next_interaction,
+                        None => panic!(
+                            "When resetting internal interactions no interactions were found"
+                        ),
+                    };
+                    target_indices = Vec::new();
+                    remaining = reset_interaction.within;
+                    target_interaction = reset_interaction;
+                }
                 InteractionResult::TimeOut => {
                     //reset
                     interaction_iter = interactions.iter();
@@ -207,6 +221,11 @@ fn check_interaction(
     if frame_state == target.action {
         return InteractionResult::Target;
     }
+    if let Some(true) = target.failed_l_cancel
+        && let Some(Some(true)) = post_frame.l_cancel
+    {
+        return InteractionResult::GameStateMismatch;
+    }
     InteractionResult::NonContiguous
 }
 
@@ -267,6 +286,7 @@ mod tests {
         let interactions = vec![interaction::Interaction {
             action: Fox::BlasterAirLoop as u16,
             from_player: External::Fox,
+            failed_l_cancel: None,
             within: None,
         }];
         let players = check_players(&game, character, opponent).unwrap();
@@ -302,6 +322,7 @@ mod tests {
         let interactions = vec![interaction::Interaction {
             action: Common::AttackAirLw as u16,
             from_player: External::Fox,
+            failed_l_cancel: None,
             within: None,
         }];
         let players = check_players(&game, character, opponent).unwrap();
@@ -349,10 +370,12 @@ mod tests {
             interaction::Interaction {
                 action: Common::AttackAirLw as u16,
                 from_player: External::Fox,
+                failed_l_cancel: None,
                 within: None,
             },
             interaction::Interaction {
                 action: Common::DamageAir2 as u16,
+                failed_l_cancel: None,
                 from_player: External::Pikachu,
                 within: Some(200),
             },

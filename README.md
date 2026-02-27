@@ -1,17 +1,17 @@
 # Arwing
 
-Arwing's goal is to be a querying engine for finding interactions in a set of SSBM slippi replays.
+Arwing's is a querying engine for finding interactions in a set of SSBM slippi replays.
 
 ![Arwing GUI](./gui.png)
 
 ## Usage
 ### Arwing-cli
  ```
-    ./arwing -p PLAYER_CHARACTER -o OPPONENT_CHARACTER -d DIRECTORY_TO_PARSE -i INTERACTION -e JSON_EXPORT_LOCATION
+    ./arwing -p PLAYER_CHARACTER -o OPPONENT_CHARACTER -d DIRECTORY -i INTERACTION -e JSON_EXPORT_LOCATION
  ```
 * PLAYER_CHARACTER and OPPONENT_CHARACTER are all-caps character names with space delimited by underscores, ex: GAME_AND_WATCH
 
-* DIRECTORY_TO_PARSE parses recursively through each folder and finds each .slp file to analyze. Symlinks are ignored.
+* DIRECTORY parses recursively through each folder and finds each .slp file to analyze. Symlinks are ignored.
 
 * INTERACTION is a set of three data fields repeated any amount of times: 
     * Character Performing Action (In the same format as PLAYER_CHARACTER)

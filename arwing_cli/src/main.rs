@@ -95,6 +95,7 @@ fn main() {
             Interaction {
                 action: interaction[1].parse().unwrap(),
                 from_player: from_player,
+                failed_l_cancel: None,
                 //TODO(Tweet): Figure out how to fix the 1st input low number of within frames bug.
                 within: match interaction[2].as_str() {
                     "None" => None,
