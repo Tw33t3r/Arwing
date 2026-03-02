@@ -135,6 +135,14 @@ pub fn parse_frames(
 
             let post_frame = port.leader.post.state.get(index).unwrap();
 
+            let l_cancel_state = port
+                .leader
+                .post
+                .l_cancel
+                .as_ref()
+                .expect("l_cancel")
+                .get(index);
+
             match check_interaction(
                 post_frame,
                 target_interaction,
@@ -167,31 +175,38 @@ pub fn parse_frames(
                     target_interaction = reset_interaction;
                 }
                 InteractionResult::NonContiguous => (),
+                //TODO: Split these handlers into helper functions
                 InteractionResult::Target => {
                     if previous_frame[port_index] as u16
                         != port.leader.post.state.get(index).unwrap()
                     {
-                        //TODO Excessively moving memory around in this block
-                        target_interaction = match interaction_iter.next() {
-                            Some(interaction) => {
-                                target_indices.push(index);
-                                remaining = interaction.within;
-                                interaction
-                            }
-                            None => {
-                                interaction_iter = interactions.iter();
-                                let reset_interaction = match interaction_iter.next() {
-                                    Some(next_interaction) => next_interaction,
-                                    None => panic!(
-                                        "When resetting internal interactions none were found"
-                                    ),
-                                };
-                                target_indices.push(index);
-                                result.push(target_indices);
-                                target_indices = Vec::new();
-                                remaining = reset_interaction.within;
-                                reset_interaction
-                            }
+                        if let Some(true) = target_interaction.failed_l_cancel
+                            && let Some(1) = l_cancel_state
+                        {
+                            ()
+                        } else {
+                            //TODO Excessively moving memory around in this block
+                            target_interaction = match interaction_iter.next() {
+                                Some(interaction) => {
+                                    target_indices.push(index);
+                                    remaining = interaction.within;
+                                    interaction
+                                }
+                                None => {
+                                    interaction_iter = interactions.iter();
+                                    let reset_interaction = match interaction_iter.next() {
+                                        Some(next_interaction) => next_interaction,
+                                        None => panic!(
+                                            "When resetting internal interactions none were found"
+                                        ),
+                                    };
+                                    target_indices.push(index);
+                                    result.push(target_indices);
+                                    target_indices = Vec::new();
+                                    remaining = reset_interaction.within;
+                                    reset_interaction
+                                }
+                            };
                         };
                     }
                 }
@@ -220,11 +235,6 @@ fn check_interaction(
     }
     if frame_state == target.action {
         return InteractionResult::Target;
-    }
-    if let Some(true) = target.failed_l_cancel
-        && let Some(Some(true)) = post_frame.l_cancel
-    {
-        return InteractionResult::GameStateMismatch;
     }
     InteractionResult::NonContiguous
 }
@@ -383,5 +393,23 @@ mod tests {
         let players = check_players(&game, character, opponent).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(parsed.result, [[3645, 3661], [6943, 6947], [12272, 12276]])
+    }
+
+    #[test]
+    fn dairs_that_miss_l_cancel() {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("test/test.slp");
+        let game = read_game(path.as_path()).unwrap();
+        let character = External::Pikachu;
+        let opponent = External::Fox;
+        let interactions = vec![interaction::Interaction {
+            action: Common::LandingAirB as u16,
+            failed_l_cancel: Some(true),
+            from_player: External::Pikachu,
+            within: None,
+        }];
+        let players = check_players(&game, character, opponent).unwrap();
+        let parsed = parse_game(game, &interactions, players).unwrap();
+        assert_eq!(parsed.result, [[463], [7756], [9757]])
     }
 }
