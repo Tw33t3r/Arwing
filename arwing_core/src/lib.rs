@@ -50,7 +50,6 @@ enum InteractionResult {
     TimeOut,
     WrongCharacter,
     NonContiguous,
-    GameStateMismatch,
     Target,
 }
 
