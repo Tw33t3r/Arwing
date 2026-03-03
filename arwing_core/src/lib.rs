@@ -50,6 +50,7 @@ enum InteractionResult {
     TimeOut,
     WrongCharacter,
     NonContiguous,
+    GameStateMismatch,
     Target,
 }
 
@@ -144,24 +145,13 @@ pub fn parse_frames(
 
             match check_interaction(
                 post_frame,
+                l_cancel_state,
                 target_interaction,
                 &mut remaining,
                 port_character,
             ) {
                 InteractionResult::WrongCharacter => (),
-                InteractionResult::GameStateMismatch => {
-                    //reset
-                    interaction_iter = interactions.iter();
-                    let reset_interaction = match interaction_iter.next() {
-                        Some(next_interaction) => next_interaction,
-                        None => panic!(
-                            "When resetting internal interactions no interactions were found"
-                        ),
-                    };
-                    target_indices = Vec::new();
-                    remaining = reset_interaction.within;
-                    target_interaction = reset_interaction;
-                }
+                InteractionResult::GameStateMismatch => (),
                 InteractionResult::TimeOut => {
                     //reset
                     interaction_iter = interactions.iter();
@@ -174,38 +164,31 @@ pub fn parse_frames(
                     target_interaction = reset_interaction;
                 }
                 InteractionResult::NonContiguous => (),
-                //TODO: Split these handlers into helper functions
                 InteractionResult::Target => {
                     if previous_frame[port_index] as u16
                         != port.leader.post.state.get(index).unwrap()
                     {
-                        if let Some(true) = target_interaction.failed_l_cancel
-                            && let Some(1) = l_cancel_state
-                        {
-                            ()
-                        } else {
-                            //TODO Excessively moving memory around in this block
-                            target_interaction = match interaction_iter.next() {
-                                Some(interaction) => {
-                                    target_indices.push(index);
-                                    remaining = interaction.within;
-                                    interaction
-                                }
-                                None => {
-                                    interaction_iter = interactions.iter();
-                                    let reset_interaction = match interaction_iter.next() {
-                                        Some(next_interaction) => next_interaction,
-                                        None => panic!(
-                                            "When resetting internal interactions none were found"
-                                        ),
-                                    };
-                                    target_indices.push(index);
-                                    result.push(target_indices);
-                                    target_indices = Vec::new();
-                                    remaining = reset_interaction.within;
-                                    reset_interaction
-                                }
-                            };
+                        //TODO Excessively moving memory around in this block
+                        target_interaction = match interaction_iter.next() {
+                            Some(interaction) => {
+                                target_indices.push(index);
+                                remaining = interaction.within;
+                                interaction
+                            }
+                            None => {
+                                interaction_iter = interactions.iter();
+                                let reset_interaction = match interaction_iter.next() {
+                                    Some(next_interaction) => next_interaction,
+                                    None => panic!(
+                                        "When resetting internal interactions none were found"
+                                    ),
+                                };
+                                target_indices.push(index);
+                                result.push(target_indices);
+                                target_indices = Vec::new();
+                                remaining = reset_interaction.within;
+                                reset_interaction
+                            }
                         };
                     }
                 }
@@ -218,6 +201,7 @@ pub fn parse_frames(
 
 fn check_interaction(
     frame_state: u16,
+    l_cancel_state: Option<u8>,
     target: &interaction::Interaction,
     remaining: &mut Option<u32>,
     character: External,
@@ -231,6 +215,12 @@ fn check_interaction(
 
     if character != target.from_player {
         return InteractionResult::WrongCharacter;
+    }
+
+    if let Some(true) = target.failed_l_cancel
+        && let Some(1) = l_cancel_state
+    {
+        return InteractionResult::GameStateMismatch;
     }
     if frame_state == target.action {
         return InteractionResult::Target;
