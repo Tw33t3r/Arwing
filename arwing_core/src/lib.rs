@@ -46,14 +46,6 @@ struct DolphinEntry {
     endFrame: usize,
 }
 
-enum InteractionResult {
-    TimeOut,
-    WrongCharacter,
-    NonContiguous,
-    GameStateMismatch,
-    Target,
-}
-
 //TODO(Tweet): We can change the return of this from character to port numbers, then we don't need
 //to worry about wrong character errors later on
 pub fn check_players(game: &Game, player: External, opponent: External) -> Option<Characters> {
@@ -96,10 +88,9 @@ pub fn parse_game(
     Ok(result)
 }
 
-// TODO(Tweet) Frame is in struct-of-arrays format. Deeply nested values each have their own array
+// Frame is in struct-of-arrays format. Deeply nested values each have their own array
 // ranging from beginning to end of frame.id<i32>.
-// Need to loop from beginning to end, checking interactions at their deeply nested indices. Ports are still split by
-// Vec<PortData>
+// TODO: Convert this to use InteractionCond instead of Interaction
 pub fn parse_frames(
     frames: Frame,
     interactions: &[interaction::Interaction],
@@ -143,16 +134,15 @@ pub fn parse_frames(
                 .expect("l_cancel")
                 .get(index);
 
-            match check_interaction(
+            match target_interaction.check_interaction(
                 post_frame,
                 l_cancel_state,
-                target_interaction,
                 &mut remaining,
                 port_character,
             ) {
-                InteractionResult::WrongCharacter => (),
-                InteractionResult::GameStateMismatch => (),
-                InteractionResult::TimeOut => {
+                interaction::InteractionResult::WrongCharacter => (),
+                interaction::InteractionResult::GameStateMismatch => (),
+                interaction::InteractionResult::TimeOut => {
                     //reset
                     interaction_iter = interactions.iter();
                     let reset_interaction = match interaction_iter.next() {
@@ -163,8 +153,8 @@ pub fn parse_frames(
                     remaining = reset_interaction.within;
                     target_interaction = reset_interaction;
                 }
-                InteractionResult::NonContiguous => (),
-                InteractionResult::Target => {
+                interaction::InteractionResult::NonContiguous => (),
+                interaction::InteractionResult::Target => {
                     if previous_frame[port_index] as u16
                         != port.leader.post.state.get(index).unwrap()
                     {
@@ -197,35 +187,6 @@ pub fn parse_frames(
         }
     }
     Ok(QueryResult { result })
-}
-
-fn check_interaction(
-    frame_state: u16,
-    l_cancel_state: Option<u8>,
-    target: &interaction::Interaction,
-    remaining: &mut Option<u32>,
-    character: External,
-) -> InteractionResult {
-    if let Some(amount) = remaining {
-        if amount == &0 {
-            return InteractionResult::TimeOut;
-        }
-        *remaining = Some(*amount - 1);
-    }
-
-    if character != target.from_player {
-        return InteractionResult::WrongCharacter;
-    }
-
-    if let Some(true) = target.failed_l_cancel
-        && let Some(1) = l_cancel_state
-    {
-        return InteractionResult::GameStateMismatch;
-    }
-    if frame_state == target.action {
-        return InteractionResult::Target;
-    }
-    InteractionResult::NonContiguous
 }
 
 pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {
