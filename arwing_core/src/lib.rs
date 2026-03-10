@@ -13,7 +13,7 @@ use peppi::frame::immutable::Frame;
 use peppi::game::immutable::Game;
 use peppi::io::slippi::read;
 
-use ssbm_data::{action_state::Common, character::External};
+use ssbm_data::character::External;
 
 pub mod characters;
 pub mod interaction;
@@ -78,7 +78,7 @@ pub fn read_game(infile: &Path) -> Result<Game, Box<dyn Error>> {
 
 pub fn parse_game(
     game: Game,
-    interactions: &[interaction::Interaction],
+    interactions: &[interaction::InteractionCond],
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
     if game.frames.ports.len() != 2 {
@@ -90,33 +90,18 @@ pub fn parse_game(
 
 // Frame is in struct-of-arrays format. Deeply nested values each have their own array
 // ranging from beginning to end of frame.id<i32>.
-// TODO: Convert this to use InteractionCond instead of Interaction
 pub fn parse_frames(
     frames: Frame,
-    interactions: &[interaction::Interaction],
+    interactions: &[interaction::InteractionCond],
     players: Characters,
 ) -> Result<QueryResult, Box<dyn Error>> {
-    let mut target_indices: Vec<usize> = Vec::new();
-    let mut result = Vec::new();
-
-    //Some state that doesn't exist in non-crazy-hand games
-    let mut previous_frame = [
-        Common::CaptureCrazyHand as u16,
-        Common::CaptureCrazyHand as u16,
-    ];
-
-    let mut interaction_iter = interactions.iter();
-    let mut target_interaction = match interaction_iter.next() {
-        Some(interaction) => interaction,
-        None => panic!("There were no interactions listed when parsing frames"),
-    };
-
-    let mut remaining = target_interaction.within;
+    let mut active_matches: Vec<interaction::MatchState> = Vec::new();
+    let mut results = Vec::new();
+    let mut previous_frame = [u16::MAX, u16::MAX];
 
     for index in 0..frames.id.len() {
         //With this the way it is we will end up checking a lot of unnecessary frames in non-mirror
         //matchups.
-        //TODO way too many indentations
         for (port_index, port) in frames.ports.iter().enumerate() {
             let port_character = match port_index {
                 0 => players.p1,
@@ -126,6 +111,10 @@ pub fn parse_frames(
 
             let post_frame = port.leader.post.state.get(index).unwrap();
 
+            if post_frame == previous_frame[port_index] {
+                continue;
+            }
+
             let l_cancel_state = port
                 .leader
                 .post
@@ -134,59 +123,62 @@ pub fn parse_frames(
                 .expect("l_cancel")
                 .get(index);
 
-            match target_interaction.check_interaction(
-                post_frame,
-                l_cancel_state,
-                &mut remaining,
-                port_character,
-            ) {
-                interaction::InteractionResult::WrongCharacter => (),
-                interaction::InteractionResult::GameStateMismatch => (),
-                interaction::InteractionResult::TimeOut => {
-                    //reset
-                    interaction_iter = interactions.iter();
-                    let reset_interaction = match interaction_iter.next() {
-                        Some(next_interaction) => next_interaction,
-                        None => panic!("When resetting internal none were found"),
-                    };
-                    target_indices = Vec::new();
-                    remaining = reset_interaction.within;
-                    target_interaction = reset_interaction;
-                }
-                interaction::InteractionResult::NonContiguous => (),
-                interaction::InteractionResult::Target => {
-                    if previous_frame[port_index] as u16
-                        != port.leader.post.state.get(index).unwrap()
-                    {
-                        //TODO Excessively moving memory around in this block
-                        target_interaction = match interaction_iter.next() {
-                            Some(interaction) => {
-                                target_indices.push(index);
-                                remaining = interaction.within;
-                                interaction
-                            }
-                            None => {
-                                interaction_iter = interactions.iter();
-                                let reset_interaction = match interaction_iter.next() {
-                                    Some(next_interaction) => next_interaction,
-                                    None => panic!(
-                                        "When resetting internal interactions none were found"
-                                    ),
-                                };
-                                target_indices.push(index);
-                                result.push(target_indices);
-                                target_indices = Vec::new();
-                                remaining = reset_interaction.within;
-                                reset_interaction
-                            }
-                        };
+            //advance matches
+            active_matches.retain_mut(|state| {
+                let cond = &interactions[state.step];
+                match cond.matches(
+                    post_frame,
+                    l_cancel_state,
+                    &mut state.remaining,
+                    port_character,
+                ) {
+                    interaction::InteractionResult::Target => {
+                        state.indices.push(index);
+                        state.step += 1;
+                        println!("state {:?}", state);
+                        println!("results {:?}", results);
+                        if state.step == interactions.len() {
+                            println!("pushing results at index: {:?}", index);
+                            results.push(state.indices.clone());
+                            return false;
+                        }
+
+                        println!("setting remaining at index: {:?}", index);
+                        state.remaining = interactions[state.step].within();
                     }
+
+                    interaction::InteractionResult::TimeOut => {
+                        return false;
+                    }
+
+                    interaction::InteractionResult::WrongCharacter
+                    | interaction::InteractionResult::NonContiguous
+                    | interaction::InteractionResult::GameStateMismatch => {}
                 }
-            };
-            previous_frame[port_index] = port.leader.post.state.get(index).unwrap();
+
+                true
+            });
+
+            //start new match if no branch is in at state 0
+            if interactions[0].matches(post_frame, l_cancel_state, &mut None, port_character)
+                == interaction::InteractionResult::Target
+            {
+                if interactions.len() == 1 {
+                    results.push(vec![index]);
+                } else {
+                    active_matches.push(interaction::MatchState {
+                        step: 0,
+                        remaining: interactions[0].within(),
+                        indices: vec![index],
+                    })
+                };
+            }
+
+            //update previous frame
+            previous_frame[port_index] = post_frame;
         }
     }
-    Ok(QueryResult { result })
+    Ok(QueryResult { result: results })
 }
 
 pub fn create_json(games: Vec<ParsedGame>, output_loc: PathBuf) {
@@ -243,12 +235,14 @@ mod tests {
         let game = read_game(path.as_path()).unwrap();
         let character = External::Fox;
         let opponent = External::Pikachu;
-        let interactions = vec![interaction::Interaction {
-            action: Fox::BlasterAirLoop as u16,
-            from_player: External::Fox,
-            failed_l_cancel: None,
-            within: None,
-        }];
+        let interactions = vec![interaction::InteractionCond::Single(
+            interaction::Interaction {
+                action: Fox::BlasterAirLoop as u16,
+                from_player: External::Fox,
+                failed_l_cancel: None,
+                within: None,
+            },
+        )];
         let players = check_players(&game, character, opponent).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(
@@ -279,12 +273,14 @@ mod tests {
         let game = read_game(path.as_path()).unwrap();
         let character = External::Fox;
         let opponent = External::Pikachu;
-        let interactions = vec![interaction::Interaction {
-            action: Common::AttackAirLw as u16,
-            from_player: External::Fox,
-            failed_l_cancel: None,
-            within: None,
-        }];
+        let interactions = vec![interaction::InteractionCond::Single(
+            interaction::Interaction {
+                action: Common::AttackAirLw as u16,
+                from_player: External::Fox,
+                failed_l_cancel: None,
+                within: None,
+            },
+        )];
         let players = check_players(&game, character, opponent).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(
@@ -327,18 +323,18 @@ mod tests {
         let character = External::Fox;
         let opponent = External::Pikachu;
         let interactions = vec![
-            interaction::Interaction {
+            interaction::InteractionCond::Single(interaction::Interaction {
                 action: Common::AttackAirLw as u16,
                 from_player: External::Fox,
                 failed_l_cancel: None,
                 within: None,
-            },
-            interaction::Interaction {
+            }),
+            interaction::InteractionCond::Single(interaction::Interaction {
                 action: Common::DamageAir2 as u16,
                 failed_l_cancel: None,
                 from_player: External::Pikachu,
                 within: Some(200),
-            },
+            }),
         ];
         let players = check_players(&game, character, opponent).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
@@ -352,12 +348,14 @@ mod tests {
         let game = read_game(path.as_path()).unwrap();
         let character = External::Pikachu;
         let opponent = External::Fox;
-        let interactions = vec![interaction::Interaction {
-            action: Common::LandingAirB as u16,
-            failed_l_cancel: Some(true),
-            from_player: External::Pikachu,
-            within: None,
-        }];
+        let interactions = vec![interaction::InteractionCond::Single(
+            interaction::Interaction {
+                action: Common::LandingAirB as u16,
+                failed_l_cancel: Some(true),
+                from_player: External::Pikachu,
+                within: None,
+            },
+        )];
         let players = check_players(&game, character, opponent).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(parsed.result, [[463], [7756], [9757]])

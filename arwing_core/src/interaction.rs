@@ -110,6 +110,14 @@ pub enum InteractionCond {
 }
 
 impl InteractionCond {
+    pub fn within(&self) -> Option<u32> {
+        match self {
+            InteractionCond::Single(i) => i.within,
+            InteractionCond::All(conds) => conds.iter().filter_map(|c| c.within()).min(),
+            InteractionCond::Any(conds) => conds.iter().filter_map(|c| c.within()).max(),
+        }
+    }
+
     pub fn matches(
         &self,
         frame_state: u16,
@@ -121,6 +129,7 @@ impl InteractionCond {
             InteractionCond::Single(cond) => {
                 cond.check_interaction(frame_state, l_cancel_state, remaining, character)
             }
+
             InteractionCond::All(conds) => {
                 let is_target = conds.iter().all(|c| {
                     InteractionResult::Target
@@ -146,4 +155,11 @@ impl InteractionCond {
             }
         }
     }
+}
+
+#[derive(Debug)]
+pub struct MatchState {
+    pub step: usize,
+    pub remaining: Option<u32>,
+    pub indices: Vec<usize>,
 }
