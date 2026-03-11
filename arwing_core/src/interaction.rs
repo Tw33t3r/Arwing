@@ -24,18 +24,15 @@ impl Interaction {
         &self,
         frame_state: u16,
         l_cancel_state: Option<u8>,
-        remaining: &mut Option<u32>,
+        remaining: Option<u32>,
         character: External,
     ) -> InteractionResult {
-        if let Some(amount) = remaining {
-            if amount == &0 {
-                return InteractionResult::TimeOut;
-            }
-            *remaining = Some(*amount - 1);
-        }
-
         if character != self.from_player {
             return InteractionResult::WrongCharacter;
+        }
+
+        if let Some(0) = remaining {
+            return InteractionResult::TimeOut;
         }
 
         if let Some(true) = self.failed_l_cancel
@@ -43,6 +40,7 @@ impl Interaction {
         {
             return InteractionResult::GameStateMismatch;
         }
+
         if frame_state == self.action {
             return InteractionResult::Target;
         }
@@ -122,7 +120,7 @@ impl InteractionCond {
         &self,
         frame_state: u16,
         l_cancel_state: Option<u8>,
-        remaining: &mut Option<u32>,
+        remaining: Option<u32>,
         character: External,
     ) -> InteractionResult {
         match self {

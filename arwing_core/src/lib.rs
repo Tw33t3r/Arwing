@@ -111,10 +111,6 @@ pub fn parse_frames(
 
             let post_frame = port.leader.post.state.get(index).unwrap();
 
-            if post_frame == previous_frame[port_index] {
-                continue;
-            }
-
             let l_cancel_state = port
                 .leader
                 .post
@@ -123,27 +119,21 @@ pub fn parse_frames(
                 .expect("l_cancel")
                 .get(index);
 
+            let state_changed = post_frame != previous_frame[port_index];
+
             //advance matches
             active_matches.retain_mut(|state| {
                 let cond = &interactions[state.step];
-                match cond.matches(
-                    post_frame,
-                    l_cancel_state,
-                    &mut state.remaining,
-                    port_character,
-                ) {
+
+                match cond.matches(post_frame, l_cancel_state, state.remaining, port_character) {
                     interaction::InteractionResult::Target => {
                         state.indices.push(index);
                         state.step += 1;
-                        println!("state {:?}", state);
-                        println!("results {:?}", results);
                         if state.step == interactions.len() {
-                            println!("pushing results at index: {:?}", index);
                             results.push(state.indices.clone());
                             return false;
                         }
 
-                        println!("setting remaining at index: {:?}", index);
                         state.remaining = interactions[state.step].within();
                     }
 
@@ -151,30 +141,35 @@ pub fn parse_frames(
                         return false;
                     }
 
-                    interaction::InteractionResult::WrongCharacter
-                    | interaction::InteractionResult::NonContiguous
-                    | interaction::InteractionResult::GameStateMismatch => {}
+                    interaction::InteractionResult::WrongCharacter => {}
+
+                    interaction::InteractionResult::NonContiguous
+                    | interaction::InteractionResult::GameStateMismatch => {
+                        if let Some(remaining) = state.remaining.as_mut() {
+                            *remaining -= 1;
+                        }
+                    }
                 }
 
                 true
             });
 
-            //start new match if no branch is in at state 0
-            if interactions[0].matches(post_frame, l_cancel_state, &mut None, port_character)
-                == interaction::InteractionResult::Target
+            //start new match if we have a new matching frame happens and no branch is in at state 0
+            if state_changed
+                && interactions[0].matches(post_frame, l_cancel_state, None, port_character)
+                    == interaction::InteractionResult::Target
             {
                 if interactions.len() == 1 {
                     results.push(vec![index]);
                 } else {
                     active_matches.push(interaction::MatchState {
-                        step: 0,
-                        remaining: interactions[0].within(),
+                        step: 1,
+                        remaining: interactions[1].within(),
                         indices: vec![index],
                     })
                 };
             }
 
-            //update previous frame
             previous_frame[port_index] = post_frame;
         }
     }
@@ -338,7 +333,10 @@ mod tests {
         ];
         let players = check_players(&game, character, opponent).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
-        assert_eq!(parsed.result, [[3645, 3661], [6943, 6947], [12272, 12276]])
+        assert_eq!(
+            parsed.result,
+            [[3645, 3661], [6943, 6947], [7512, 7680], [12272, 12276]]
+        )
     }
 
     #[test]
