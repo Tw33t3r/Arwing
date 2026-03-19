@@ -10,7 +10,7 @@ use glob::glob;
 
 use arwing_core::{
     ParsedGame, characters::character_from_str, check_players, create_json,
-    interaction::Interaction, parse_game, read_game,
+    interaction::Interaction, interaction::InteractionCond, parse_game, read_game,
 };
 
 use ssbm_data::character::External;
@@ -91,21 +91,108 @@ fn main() {
         .unwrap()
         .to_path_buf();
 
-    //TODO: Un hard-code these values, allow for ranges of actions
-    let interactions: Vec<Interaction> = if matches.get_flag("punished_l_cancels") {
+    let interactions: Vec<InteractionCond> = if matches.get_flag("punished_l_cancels") {
         vec![
-            Interaction {
-                action: 72,
-                from_player: player,
-                failed_l_cancel: Some(true),
-                within: None,
-            },
-            Interaction {
-                action: 75,
-                from_player: player,
-                failed_l_cancel: None,
-                within: Some(100),
-            },
+            InteractionCond::Any(vec![
+                InteractionCond::Single(Interaction {
+                    action: 71,
+                    from_player: player,
+                    failed_l_cancel: Some(true),
+                    within: None,
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 72,
+                    from_player: player,
+                    failed_l_cancel: Some(true),
+                    within: None,
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 73,
+                    from_player: player,
+                    failed_l_cancel: Some(true),
+                    within: None,
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 74,
+                    from_player: player,
+                    failed_l_cancel: Some(true),
+                    within: None,
+                }),
+            ]),
+            InteractionCond::Any(vec![
+                InteractionCond::Single(Interaction {
+                    action: 75,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 76,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 77,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 78,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 79,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 80,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 81,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 82,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 83,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 84,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 85,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 86,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+            ]),
         ]
     } else {
         interactions(
@@ -174,7 +261,7 @@ fn main() {
     println!("parsed in {} μs", now.elapsed().as_micros());
 }
 
-fn interactions(interactions: Vec<&String>) -> Vec<Interaction> {
+fn interactions(interactions: Vec<&String>) -> Vec<InteractionCond> {
     return interactions
         .chunks(3)
         .map(|interaction| {
@@ -185,7 +272,7 @@ fn interactions(interactions: Vec<&String>) -> Vec<Interaction> {
                     panic!("Couldn't match the from_player in interactions")
                 }
             };
-            Interaction {
+            InteractionCond::Single(Interaction {
                 action: interaction[1].parse().unwrap(),
                 from_player: from_player,
                 failed_l_cancel: None,
@@ -194,7 +281,7 @@ fn interactions(interactions: Vec<&String>) -> Vec<Interaction> {
                     "None" => None,
                     other => Some(other.parse().unwrap()),
                 },
-            }
+            })
         })
         .collect();
 }

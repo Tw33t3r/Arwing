@@ -141,13 +141,17 @@ impl InteractionCond {
             }
 
             InteractionCond::Any(conds) => {
-                let is_target = conds.iter().any(|c| {
-                    InteractionResult::Target
-                        == c.matches(frame_state, l_cancel_state, remaining, character)
-                });
-
-                if is_target {
-                    return InteractionResult::Target;
+                for c in conds.iter() {
+                    let result = c.matches(frame_state, l_cancel_state, remaining, character);
+                    if result == InteractionResult::WrongCharacter {
+                        return InteractionResult::WrongCharacter;
+                    }
+                    if result == InteractionResult::TimeOut {
+                        return InteractionResult::TimeOut;
+                    }
+                    if result == InteractionResult::Target {
+                        return InteractionResult::Target;
+                    }
                 }
                 return InteractionResult::NonContiguous;
             }
