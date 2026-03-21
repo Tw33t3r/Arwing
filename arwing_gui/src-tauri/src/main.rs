@@ -4,7 +4,8 @@
 use std::{ffi::OsStr, fs::canonicalize, path::PathBuf};
 
 use arwing_core::{
-    ParsedGame, check_players, create_json, interaction::Interaction, parse_game, read_game,
+    ParsedGame, check_players, create_json, interaction::Interaction, interaction::InteractionCond,
+    parse_game, read_game,
 };
 use glob::glob;
 use ssbm_data::character::External;
@@ -38,6 +39,10 @@ fn scan_for_interactions(
     let mut parsed_games: Vec<ParsedGame> = Vec::new();
     let player_char = External::try_from(player).unwrap();
     let opponent_char = External::try_from(opponent).unwrap();
+    let interaction_conds: Vec<InteractionCond> = interactions
+        .into_iter()
+        .map(InteractionCond::Single)
+        .collect();
 
     let path = PathBuf::from(&path_string);
     if path.is_dir() {
@@ -59,7 +64,7 @@ fn scan_for_interactions(
                     if let Ok(game) = read_game(path.as_path()) {
                         let players_result = check_players(&game, player_char, opponent_char);
                         if let Some(players) = players_result {
-                            let parsed = parse_game(game, &interactions, players).unwrap();
+                            let parsed = parse_game(game, &interaction_conds, players).unwrap();
                             parsed_games.push(ParsedGame {
                                 query_result: parsed,
                                 loc: canonicalize(path).unwrap(),
@@ -74,7 +79,7 @@ fn scan_for_interactions(
         //Speed of single file parsing .252057s on dev machine
         let game = read_game(path.as_path()).unwrap();
         let players = check_players(&game, player_char, opponent_char).unwrap();
-        let parsed = parse_game(game, &interactions, players).unwrap();
+        let parsed = parse_game(game, &interaction_conds, players).unwrap();
         parsed_games.push(ParsedGame {
             query_result: parsed,
             loc: canonicalize(path).unwrap(),
