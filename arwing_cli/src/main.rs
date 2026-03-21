@@ -5,12 +5,12 @@ use std::{
     path::PathBuf,
 };
 
-use clap::{Arg, ArgAction, arg, command, value_parser};
+use clap::{Arg, ArgAction, ArgGroup, ValueHint, arg, command, value_parser};
 use glob::glob;
 
 use arwing_core::{
     ParsedGame, characters::character_from_str, check_players, create_json,
-    interaction::Interaction, parse_game, read_game,
+    interaction::Interaction, interaction::InteractionCond, parse_game, read_game,
 };
 
 use ssbm_data::character::External;
@@ -34,6 +34,7 @@ fn main() {
             arg!(-e --export <File>)
                 .required(false)
                 .help("Location to export file to")
+                .value_hint(ValueHint::DirPath)
                 .action(ArgAction::Set)
                 .value_parser(value_parser!(PathBuf)),
         )
@@ -41,6 +42,7 @@ fn main() {
             arg!(-d --directory <Path>)
                 .required(true)
                 .help("Directory to parse files in")
+                .value_hint(ValueHint::DirPath)
                 .action(ArgAction::Set)
                 .value_parser(value_parser!(PathBuf)),
         )
@@ -63,9 +65,19 @@ fn main() {
                 .short('i')
                 .value_names(["Character", "ActionState", "NumFrames"])
                 .num_args(3)
-                .required(true)
                 .help("Character, ActionState, Num of frames until this state")
                 .action(ArgAction::Append),
+        )
+        .arg(
+            Arg::new("punished_l_cancels")
+                .short('l')
+                .help("Seach for failed L-cancels that lead to punishes")
+                .action(ArgAction::SetTrue),
+        )
+        .group(
+            ArgGroup::new("query")
+                .args(["interaction", "punished_l_cancels"])
+                .required(true),
         )
         .get_matches();
 
@@ -79,31 +91,117 @@ fn main() {
         .unwrap()
         .to_path_buf();
 
-    let interactions: Vec<Interaction> = matches
-        .get_many("interaction")
-        .unwrap()
-        .collect::<Vec<&String>>()
-        .chunks(3)
-        .map(|interaction| {
-            let from_player_result = character_from_str(&interaction[0][..]);
-            let from_player = match from_player_result {
-                Some(from_player) => from_player,
-                None => {
-                    panic!("Couldn't match the from_player in interactions")
-                }
-            };
-            Interaction {
-                action: interaction[1].parse().unwrap(),
-                from_player: from_player,
-                failed_l_cancel: None,
-                //TODO(Tweet): Figure out how to fix the 1st input low number of within frames bug.
-                within: match interaction[2].as_str() {
-                    "None" => None,
-                    other => Some(other.parse().unwrap()),
-                },
-            }
-        })
-        .collect();
+    let interactions: Vec<InteractionCond> = if matches.get_flag("punished_l_cancels") {
+        vec![
+            InteractionCond::Any(vec![
+                InteractionCond::Single(Interaction {
+                    action: 71,
+                    from_player: player,
+                    failed_l_cancel: Some(true),
+                    within: None,
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 72,
+                    from_player: player,
+                    failed_l_cancel: Some(true),
+                    within: None,
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 73,
+                    from_player: player,
+                    failed_l_cancel: Some(true),
+                    within: None,
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 74,
+                    from_player: player,
+                    failed_l_cancel: Some(true),
+                    within: None,
+                }),
+            ]),
+            InteractionCond::Any(vec![
+                InteractionCond::Single(Interaction {
+                    action: 75,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 76,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 77,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 78,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 79,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 80,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 81,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 82,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 83,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 84,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 85,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+                InteractionCond::Single(Interaction {
+                    action: 86,
+                    from_player: player,
+                    failed_l_cancel: None,
+                    within: Some(100),
+                }),
+            ]),
+        ]
+    } else {
+        interactions(
+            matches
+                .get_many("interaction")
+                .unwrap()
+                .collect::<Vec<&String>>(),
+        )
+    };
 
     let now = std::time::Instant::now();
 
@@ -161,4 +259,29 @@ fn main() {
         }
     }
     println!("parsed in {} μs", now.elapsed().as_micros());
+}
+
+fn interactions(interactions: Vec<&String>) -> Vec<InteractionCond> {
+    return interactions
+        .chunks(3)
+        .map(|interaction| {
+            let from_player_result = character_from_str(&interaction[0][..]);
+            let from_player = match from_player_result {
+                Some(from_player) => from_player,
+                None => {
+                    panic!("Couldn't match the from_player in interactions")
+                }
+            };
+            InteractionCond::Single(Interaction {
+                action: interaction[1].parse().unwrap(),
+                from_player: from_player,
+                failed_l_cancel: None,
+                //TODO(Tweet): Figure out how to fix the 1st input low number of within frames bug.
+                within: match interaction[2].as_str() {
+                    "None" => None,
+                    other => Some(other.parse().unwrap()),
+                },
+            })
+        })
+        .collect();
 }
