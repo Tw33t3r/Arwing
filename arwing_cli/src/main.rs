@@ -145,7 +145,6 @@ fn main() {
             }
         }
     } else if path.extension() == Some(OsStr::new("slp")) {
-        //Speed of single file parsing .252057s on dev machine
         let game = read_game(path.as_path()).unwrap();
         let players = check_players(&game, player, opponent).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
@@ -158,11 +157,16 @@ fn main() {
     match export_option {
         Some(export) => create_json(parsed_games, export.to_path_buf()),
         None => {
+            let mut occurrences = 0;
             for game in parsed_games {
                 for parse in game.query_result.result {
+                    for _occurrence in &parse {
+                        occurrences += 1;
+                    }
                     println!("Found frames: {:?}, in {:?}", parse, game.loc)
                 }
             }
+            println!("Total {:?}: occurrences", occurrences);
         }
     }
     println!("parsed in {} μs", now.elapsed().as_micros());
