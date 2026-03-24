@@ -27,10 +27,10 @@ Arwing's is a querying engine for finding interactions in a set of SSBM slippi r
 - What do top foxes do after drilling pikachu?
 - How do players DI out of chaingrabs?
 - What does a particular opponent like to do out of laser?
+- What is the cost of your missed l-cancels
 
 ## In the future it might point out when a player gets punished for:
 
-- Missing L-cancels
 - Not getting enough galint on ledgedash
 - Getting stuck in shine
 - Not extending combos as far as possible
@@ -45,7 +45,4 @@ Arwing's is a querying engine for finding interactions in a set of SSBM slippi r
     - Select stages
     - Parse by Player Name
     - Add Meta-Actions i.e. From-ledge, Wavedash, Retreat, Advance
-
-- Create GUI App
-    - Likely Tauri
-    - Represent user flow
+- Add l-cancels to gui
