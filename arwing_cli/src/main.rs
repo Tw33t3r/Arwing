@@ -54,11 +54,27 @@ fn main() {
                 .value_parser(clap::builder::ValueParser::new(parse_internal_character)),
         )
         .arg(
+            Arg::new("player_tag")
+                .long("player_tag")
+                .required(false)
+                .help("Player tag to search for")
+                .action(ArgAction::Set)
+                .alias("pt"),
+        )
+        .arg(
             arg!(-o --opponent <Character>)
                 .required(true)
                 .help("Opponent character to search for")
                 .action(ArgAction::Set)
                 .value_parser(clap::builder::ValueParser::new(parse_internal_character)),
+        )
+        .arg(
+            Arg::new("opponent_tag")
+                .long("opponent_tag")
+                .required(false)
+                .help("Opponent tag to search for")
+                .action(ArgAction::Set)
+                .alias("ot"),
         )
         .arg(
             Arg::new("interaction")
@@ -101,6 +117,8 @@ fn main() {
     let _name: Option<&String> = matches.get_one("name");
     let export_option: Option<&PathBuf> = matches.get_one("export");
 
+    let player_tag: Option<&String> = matches.get_one("player_tag");
+    let opponent_tag: Option<&String> = matches.get_one("opponent_tag");
     let player: External = *matches.get_one("player").unwrap();
     let opponent: External = *matches.get_one("opponent").unwrap();
     let path: PathBuf = matches
@@ -115,9 +133,7 @@ fn main() {
     let mut parsed_games: Vec<ParsedGame> = Vec::new();
 
     if path.is_dir() {
-        //glob-match advertises that it might be a faster library for this use case
         for entry in glob(
-            //TODO(Tweet): Excessive casting
             &(path
                 .as_path()
                 .to_str()
@@ -131,7 +147,8 @@ fn main() {
                 Ok(path) => {
                     //TODO(Tweet): spawn a new thread for each game
                     if let Ok(game) = read_game(path.as_path()) {
-                        let players_result = check_players(&game, player, opponent);
+                        let players_result =
+                            check_players(&game, player, opponent, player_tag, opponent_tag);
                         if let Some(players) = players_result {
                             let parsed = parse_game(game, &interactions, players).unwrap();
                             parsed_games.push(ParsedGame {
@@ -146,7 +163,7 @@ fn main() {
         }
     } else if path.extension() == Some(OsStr::new("slp")) {
         let game = read_game(path.as_path()).unwrap();
-        let players = check_players(&game, player, opponent).unwrap();
+        let players = check_players(&game, player, opponent, player_tag, opponent_tag).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
         parsed_games.push(ParsedGame {
             query_result: parsed,

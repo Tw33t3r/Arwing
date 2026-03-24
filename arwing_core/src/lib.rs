@@ -10,6 +10,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use peppi::frame::immutable::Frame;
+use peppi::game::Player;
 use peppi::game::immutable::Game;
 use peppi::io::slippi::read;
 
@@ -48,22 +49,41 @@ struct DolphinEntry {
 
 //TODO(Tweet): We can change the return of this from character to port numbers, then we don't need
 //to worry about wrong character errors later on
-pub fn check_players(game: &Game, player: External, opponent: External) -> Option<Characters> {
+pub fn check_players(
+    game: &Game,
+    player_character: External,
+    opponent_character: External,
+    player_tag: Option<&String>,
+    opponent_tag: Option<&String>,
+) -> Option<Characters> {
     let players = &game.start.players;
     if players.len() != 2 {
         return None;
     }
-    let p1: External;
-    let p2: External;
-    if players[0].character == player as u8 && players[1].character == opponent as u8 {
-        p1 = player;
-        p2 = opponent;
-    } else if players[1].character == player as u8 && players[0].character == opponent as u8 {
-        p1 = opponent;
-        p2 = player;
-    } else {
-        return None;
-    }
+
+    let matches_tag = |player: &Player, tag: Option<&String>| {
+        tag.map_or(true, |tag| {
+            player
+                .netplay
+                .as_ref()
+                .map_or(false, |netplay| netplay.name.to_normalized() == *tag)
+        })
+    };
+
+    let determine_character = |player: &Player| -> Option<External> {
+        if matches_tag(player, player_tag) && player.character == player_character as u8 {
+            Some(player_character)
+        } else if matches_tag(player, opponent_tag) && player.character == opponent_character as u8
+        {
+            Some(opponent_character)
+        } else {
+            None
+        }
+    };
+
+    let p1 = determine_character(&players[0])?;
+    let p2 = determine_character(&players[1])?;
+
     Some(Characters { p1, p2 })
 }
 
@@ -238,7 +258,7 @@ mod tests {
                 within: None,
             },
         )];
-        let players = check_players(&game, character, opponent).unwrap();
+        let players = check_players(&game, character, opponent, None, None).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(
             parsed.result,
@@ -276,7 +296,7 @@ mod tests {
                 within: None,
             },
         )];
-        let players = check_players(&game, character, opponent).unwrap();
+        let players = check_players(&game, character, opponent, None, None).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(
             parsed.result,
@@ -331,7 +351,7 @@ mod tests {
                 within: Some(200),
             }),
         ];
-        let players = check_players(&game, character, opponent).unwrap();
+        let players = check_players(&game, character, opponent, None, None).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(
             parsed.result,
@@ -354,7 +374,7 @@ mod tests {
                 within: None,
             },
         )];
-        let players = check_players(&game, character, opponent).unwrap();
+        let players = check_players(&game, character, opponent, None, None).unwrap();
         let parsed = parse_game(game, &interactions, players).unwrap();
         assert_eq!(parsed.result, [[463], [7756], [9757]])
     }

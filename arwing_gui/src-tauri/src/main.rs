@@ -46,9 +46,7 @@ fn scan_for_interactions(
 
     let path = PathBuf::from(&path_string);
     if path.is_dir() {
-        //glob-match advertises that it might be a faster library for this use case
         for entry in glob(
-            //TODO(Tweet): Excessive casting
             &(path
                 .as_path()
                 .to_str()
@@ -62,7 +60,9 @@ fn scan_for_interactions(
                 Ok(path) => {
                     //TODO(Tweet): spawn a new thread for each game
                     if let Ok(game) = read_game(path.as_path()) {
-                        let players_result = check_players(&game, player_char, opponent_char);
+                        //TODO: Pass charater into here
+                        let players_result =
+                            check_players(&game, player_char, opponent_char, None, None);
                         if let Some(players) = players_result {
                             let parsed = parse_game(game, &interaction_conds, players).unwrap();
                             parsed_games.push(ParsedGame {
@@ -76,9 +76,9 @@ fn scan_for_interactions(
             }
         }
     } else if path.extension() == Some(OsStr::new("slp")) {
-        //Speed of single file parsing .252057s on dev machine
         let game = read_game(path.as_path()).unwrap();
-        let players = check_players(&game, player_char, opponent_char).unwrap();
+        //TODO: Pass charater into here instead of inintializing to None
+        let players = check_players(&game, player_char, opponent_char, None, None).unwrap();
         let parsed = parse_game(game, &interaction_conds, players).unwrap();
         parsed_games.push(ParsedGame {
             query_result: parsed,
